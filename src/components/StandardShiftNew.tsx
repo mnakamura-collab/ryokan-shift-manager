@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { Staff, StaffStandardSchedule } from '../types';
-import { staffScheduleStorage, shiftStorage, positionStorage } from '../utils/storage';
+import { staffScheduleStorage, shiftStorage } from '../utils/storage';
 import { generateId, formatDate } from '../utils/helpers';
 
 interface StandardShiftProps {

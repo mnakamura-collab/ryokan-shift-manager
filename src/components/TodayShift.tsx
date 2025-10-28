@@ -1,5 +1,5 @@
 import type { Staff, Shift, Reservation } from '../types';
-import { getToday, getPositionColor, formatTime } from '../utils/helpers';
+import { getToday, getPositionColor } from '../utils/helpers';
 
 interface TodayShiftProps {
   currentUser: Staff;

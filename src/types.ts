@@ -76,7 +76,7 @@ export interface ShiftChangeHistory {
   shiftId: string;
   staffId: string;
   changeType: 'created' | 'modified' | 'cancelled';
-  changedAt: Date;
+  changedAt: string;
   daysBefore: number; // 何日前の変更か
   penaltyScore: number; // ペナルティスコア（直前変更ほど高い）
 }

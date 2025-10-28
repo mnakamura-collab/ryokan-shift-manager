@@ -56,6 +56,7 @@ export default function ReservationReview({ currentUser, reservations, onUpdate 
     setSelectedReservation(null);
   };
 
+  // @ts-ignore - Learning algorithm for future staff recommendations (currently unused but preserved for future use)
   const getStaffingRecommendation = (plan: string, numberOfGuests: number): number => {
     // レビュー済みデータから学習
     const similarReviews = reviewedReservations.filter(

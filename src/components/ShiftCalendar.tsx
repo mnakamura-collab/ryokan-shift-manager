@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import type { Staff, Shift } from '../types';
-import { formatDate, getDaysInMonth, getFirstDayOfMonth, getPositionColor } from '../utils/helpers';
-import { shiftStorage } from '../utils/storage';
-import { generateId } from '../utils/helpers';
+import { formatDate, getDaysInMonth, getPositionColor } from '../utils/helpers';
 import ShiftModal from './ShiftModal';
 
 interface ShiftCalendarProps {

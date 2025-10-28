@@ -116,11 +116,10 @@ export const shiftStorage = {
           id: `history_${Date.now()}`,
           shiftId: id,
           staffId: oldShift.staffId,
-          changeDate: new Date().toISOString(),
-          originalDate: oldShift.date,
+          changeType: 'modified',
+          changedAt: new Date().toISOString(),
           daysBefore: daysDiff,
-          penalty: calculatePenaltyForDays(daysDiff),
-          reason: 'スタッフ変更',
+          penaltyScore: calculatePenaltyForDays(daysDiff),
         };
         historyStorage.add(historyEntry);
       }
@@ -149,11 +148,10 @@ export const shiftStorage = {
           id: `history_${Date.now()}`,
           shiftId: id,
           staffId: shift.staffId,
-          changeDate: new Date().toISOString(),
-          originalDate: shift.date,
+          changeType: 'cancelled',
+          changedAt: new Date().toISOString(),
           daysBefore: daysDiff,
-          penalty: penalty,
-          reason: 'シフト削除',
+          penaltyScore: penalty,
         };
         historyStorage.add(historyEntry);
       }
@@ -212,7 +210,7 @@ export const reservationStorage = {
     reservationStorage.save(all.filter((r) => r.id !== id));
   },
   getByDate: (date: string): Reservation[] => {
-    return reservationStorage.getAll().filter((r) => r.date === date);
+    return reservationStorage.getAll().filter((r) => r.checkInDate === date);
   },
 };
 

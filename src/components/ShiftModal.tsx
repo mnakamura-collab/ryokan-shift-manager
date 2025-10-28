@@ -110,11 +110,11 @@ export default function ShiftModal({ show, onClose, onUpdate, staff, selectedDat
               required
               value={formData.staffId}
               onChange={(e) => {
-                const staff = staff.find((s) => s.id === e.target.value);
+                const selectedStaff = staff.find((s: Staff) => s.id === e.target.value);
                 setFormData({
                   ...formData,
                   staffId: e.target.value,
-                  position: staff ? staff.position : formData.position
+                  position: selectedStaff ? selectedStaff.position : formData.position
                 });
               }}
               className="input w-full"

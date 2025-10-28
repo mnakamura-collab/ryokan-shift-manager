@@ -83,7 +83,7 @@ export default function ReservationManagement({ currentUser, reservations, onUpd
 
   const handleDelete = (id: string) => {
     if (confirm('この予約を削除してもよろしいですか？')) {
-      reservationStorage.remove(id);
+      reservationStorage.delete(id);
       onUpdate();
     }
   };

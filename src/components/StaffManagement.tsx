@@ -80,7 +80,7 @@ export default function StaffManagement({ staff, onUpdate }: StaffManagementProp
 
   const handleDelete = (id: string) => {
     if (confirm('このスタッフを削除してもよろしいですか？')) {
-      staffStorage.remove(id);
+      staffStorage.delete(id);
       onUpdate();
     }
   };
