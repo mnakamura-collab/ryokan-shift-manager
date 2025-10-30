@@ -1,73 +1,68 @@
-# React + TypeScript + Vite
+# 旅館シフト管理システム
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+旅館・ホテル向けのシフト管理アプリケーション。Supabaseをバックエンドとして使用し、複数ユーザーでリアルタイムにシフト管理が可能です。
 
-Currently, two official plugins are available:
+## 機能
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **本日のシフト表示** - タイムライン形式で当日のシフトを一覧表示
+- **カレンダー表示** - 月間カレンダーでシフトを管理、日付クリックでタイムライン表示
+- **標準シフト設定** - スタッフごとの標準勤務時間・曜日を設定し、自動生成
+- **夜勤対応** - 日をまたぐシフト（22:00-06:00など）に対応
+- **予約管理** - 宿泊予約の管理
+- **スタッフ管理** - スタッフ情報の登録・編集
+- **役職管理** - 役職マスタの管理
 
-## React Compiler
+## 技術スタック
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Frontend**: React 19 + TypeScript + Vite
+- **Backend**: Supabase (PostgreSQL)
+- **UI**: Tailwind CSS
+- **Hosting**: Railway
 
-## Expanding the ESLint configuration
+## セットアップ
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 必要な環境
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- Node.js 18以上
+- Supabaseアカウント
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### インストール
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Supabase設定
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+1. Supabaseプロジェクトを作成
+2. SQL Editorで `supabase-schema.sql` を実行
+3. 追加のマイグレーション実行:
+   - `supabase-add-position-fields.sql`
+   - `supabase-add-shift-columns.sql`
+4. `src/lib/supabase.ts` にプロジェクトのURLとAPIキーを設定
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 開発サーバー起動
+
+```bash
+npm run dev
 ```
+
+### ビルド
+
+```bash
+npm run build
+```
+
+## デプロイ (Railway)
+
+1. GitHubリポジトリにプッシュ
+2. Railwayでプロジェクトをインポート
+3. 自動的にビルド・デプロイされます
+
+`railway.json` に設定済み:
+- ビルドコマンド: `npm install && npm run build`
+- 起動コマンド: `npx serve -s dist -l $PORT --single`
+
+## ライセンス
+
+MIT
