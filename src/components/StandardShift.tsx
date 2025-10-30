@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Staff, Shift, Position } from '../types';
-import { shiftStorage } from '../utils/storage';
+import { shiftStorage } from '../utils/supabaseStorage';
 import { generateId, getPositionColor, formatDate } from '../utils/helpers';
 
 interface StandardShiftProps {
@@ -70,7 +70,7 @@ export default function StandardShift({ currentUser, staff, shifts, onUpdate }: 
 
   const handleDelete = (shiftId: string) => {
     if (confirm('この標準シフトを削除してもよろしいですか？')) {
-      shiftStorage.remove(shiftId);
+      shiftStorage.delete(shiftId);
       onUpdate();
     }
   };

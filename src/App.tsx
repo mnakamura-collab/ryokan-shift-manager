@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Staff, Shift, Reservation, PositionMaster } from './types';
-import { setupInitialData, staffStorage, shiftStorage, reservationStorage, currentUserStorage, positionStorage } from './utils/storage';
+import { setupInitialData, staffStorage, shiftStorage, reservationStorage, currentUserStorage, positionStorage } from './utils/supabaseStorage';
 import { getToday, formatDateJP, getDayOfWeek } from './utils/helpers';
 import TodayShift from './components/TodayShift';
 import ShiftCalendar from './components/ShiftCalendar';
@@ -14,25 +14,43 @@ import Login from './components/Login';
 
 function App() {
   const [currentUser, setCurrentUser] = useState<Staff | null>(null);
-  const [activeTab, setActiveTab] = useState<'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions'>('today');
+  // localStorageから前回のタブを復元（なければ'today'）
+  const [activeTab, setActiveTab] = useState<'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions'>(() => {
+    const savedTab = localStorage.getItem('activeTab');
+    return (savedTab as 'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions') || 'today';
+  });
   const [staff, setStaff] = useState<Staff[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [positions, setPositions] = useState<PositionMaster[]>([]);
 
+  // activeTabが変更されたらlocalStorageに保存
+  useEffect(() => {
+    localStorage.setItem('activeTab', activeTab);
+  }, [activeTab]);
+
   // 初期化
   useEffect(() => {
-    setupInitialData();
-    const user = currentUserStorage.get();
-    setCurrentUser(user);
-    loadData();
+    const init = async () => {
+      await setupInitialData();
+      const user = currentUserStorage.get();
+      setCurrentUser(user);
+      await loadData();
+    };
+    init();
   }, []);
 
-  const loadData = () => {
-    setStaff(staffStorage.getAll());
-    setShifts(shiftStorage.getAll());
-    setReservations(reservationStorage.getAll());
-    setPositions(positionStorage.getAll());
+  const loadData = async () => {
+    const [staffData, shiftsData, reservationsData, positionsData] = await Promise.all([
+      staffStorage.getAll(),
+      shiftStorage.getAll(),
+      reservationStorage.getAll(),
+      positionStorage.getAll(),
+    ]);
+    setStaff(staffData);
+    setShifts(shiftsData);
+    setReservations(reservationsData);
+    setPositions(positionsData);
   };
 
   const handleLogin = (user: Staff) => {

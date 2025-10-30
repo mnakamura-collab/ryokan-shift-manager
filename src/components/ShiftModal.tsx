@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Staff, Shift, Position } from '../types';
-import { shiftStorage, positionStorage } from '../utils/storage';
+import { shiftStorage, positionStorage } from '../utils/supabaseStorage';
 import { generateId } from '../utils/helpers';
 
 interface ShiftModalProps {
@@ -23,12 +23,15 @@ export default function ShiftModal({ show, onClose, onUpdate, staff, selectedDat
   });
 
   useEffect(() => {
-    const activePositions = positionStorage.getActive();
-    const positionNames = activePositions.map(p => p.name);
-    setPositions(positionNames);
-    if (positionNames.length > 0 && !formData.position) {
-      setFormData(prev => ({ ...prev, position: positionNames[0] }));
-    }
+    const loadPositions = async () => {
+      const activePositions = await positionStorage.getActive();
+      const positionNames = activePositions.map(p => p.name);
+      setPositions(positionNames);
+      if (positionNames.length > 0 && !formData.position) {
+        setFormData(prev => ({ ...prev, position: positionNames[0] }));
+      }
+    };
+    loadPositions();
   }, []);
 
   useEffect(() => {
@@ -38,7 +41,7 @@ export default function ShiftModal({ show, onClose, onUpdate, staff, selectedDat
         position: editingShift.position,
         startTime: editingShift.startTime,
         endTime: editingShift.endTime,
-        isStandard: editingShift.isStandard,
+        isStandard: editingShift.isStandard || false,
       });
     } else {
       setFormData({
@@ -51,11 +54,11 @@ export default function ShiftModal({ show, onClose, onUpdate, staff, selectedDat
     }
   }, [editingShift, show, positions]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (editingShift) {
-      shiftStorage.update(editingShift.id, {
+      await shiftStorage.update(editingShift.id, {
         staffId: formData.staffId,
         position: formData.position,
         startTime: formData.startTime,
@@ -74,17 +77,17 @@ export default function ShiftModal({ show, onClose, onUpdate, staff, selectedDat
         isStandard: formData.isStandard,
         isConfirmed: false,
       };
-      shiftStorage.add(newShift);
+      await shiftStorage.add(newShift);
     }
 
-    onUpdate();
+    await onUpdate();
     onClose();
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (editingShift && confirm('このシフトを削除してもよろしいですか？')) {
-      shiftStorage.remove(editingShift.id);
-      onUpdate();
+      await shiftStorage.delete(editingShift.id);
+      await onUpdate();
       onClose();
     }
   };

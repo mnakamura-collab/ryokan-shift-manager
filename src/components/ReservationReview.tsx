@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Staff, Reservation, ReservationReview } from '../types';
-import { reservationStorage, shiftStorage } from '../utils/storage';
+import { reservationStorage, shiftStorage } from '../utils/supabaseStorage';
 import { formatDateJP } from '../utils/helpers';
 
 interface ReservationReviewProps {
@@ -28,9 +28,9 @@ export default function ReservationReview({ currentUser, reservations, onUpdate 
     .filter((r) => r.review)
     .sort((a, b) => new Date(b.checkOutDate).getTime() - new Date(a.checkOutDate).getTime());
 
-  const handleStartReview = (reservation: Reservation) => {
+  const handleStartReview = async (reservation: Reservation) => {
     // その日の実際のスタッフ数を計算
-    const checkInShifts = shiftStorage.getByDate(reservation.checkInDate);
+    const checkInShifts = await shiftStorage.getByDate(reservation.checkInDate);
     const actualCount = new Set(checkInShifts.map((s) => s.staffId)).size;
 
     setSelectedReservation(reservation);
@@ -41,7 +41,7 @@ export default function ReservationReview({ currentUser, reservations, onUpdate 
     });
   };
 
-  const handleSubmitReview = () => {
+  const handleSubmitReview = async () => {
     if (!selectedReservation) return;
 
     const review: ReservationReview = {
@@ -51,7 +51,7 @@ export default function ReservationReview({ currentUser, reservations, onUpdate 
       notes: reviewForm.notes,
     };
 
-    reservationStorage.update(selectedReservation.id, { review });
+    await reservationStorage.update(selectedReservation.id, { review });
     onUpdate();
     setSelectedReservation(null);
   };

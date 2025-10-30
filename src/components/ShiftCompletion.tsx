@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Staff, Shift } from '../types';
-import { shiftStorage, staffStorage } from '../utils/storage';
+import { shiftStorage, staffStorage } from '../utils/supabaseStorage';
 import { formatDateJP, getPositionColor } from '../utils/helpers';
 
 interface ShiftCompletionProps {
@@ -16,34 +16,35 @@ export default function ShiftCompletion({ currentUser, staff, shifts, onUpdate }
   // 選択日のシフトを取得
   const dateShifts = shifts.filter((s) => s.date === selectedDate && !s.isConfirmed);
 
-  const handleCompleteShift = (shiftId: string, worked: boolean) => {
+  const handleCompleteShift = async (shiftId: string, worked: boolean) => {
     const shift = shifts.find((s) => s.id === shiftId);
     if (!shift) return;
 
     // シフトを確定済みにする
-    shiftStorage.update(shiftId, { isConfirmed: true });
+    await shiftStorage.update(shiftId, { isConfirmed: true });
 
     // 勤務した場合、信頼度にボーナスを付与
     if (worked && shift.staffId) {
-      const currentStaff = staffStorage.getAll().find((s) => s.id === shift.staffId);
+      const allStaff = await staffStorage.getAll();
+      const currentStaff = allStaff.find((s) => s.id === shift.staffId);
       if (currentStaff) {
         const bonus = 1; // シフト通り働いた場合のボーナス
         const newScore = Math.min(100, currentStaff.trustScore + bonus);
-        staffStorage.update(shift.staffId, { trustScore: newScore });
+        await staffStorage.update(shift.staffId, { trustScore: newScore });
       }
     }
 
     onUpdate();
   };
 
-  const handleCompleteAll = () => {
+  const handleCompleteAll = async () => {
     if (!confirm('この日のすべてのシフトを完了として処理しますか？')) {
       return;
     }
 
-    dateShifts.forEach((shift) => {
-      handleCompleteShift(shift.id, true);
-    });
+    for (const shift of dateShifts) {
+      await handleCompleteShift(shift.id, true);
+    }
 
     alert(`${dateShifts.length}件のシフトを完了しました`);
   };

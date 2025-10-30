@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Staff, PositionMaster } from '../types';
-import { positionStorage } from '../utils/storage';
+import { positionStorage } from '../utils/supabaseStorage';
 import { generateId } from '../utils/helpers';
 
 interface PositionManagementProps {
@@ -16,6 +16,8 @@ export default function PositionManagement({ currentUser, positions, onUpdate }:
     name: '',
     displayOrder: 1,
     isActive: true,
+    baseRequiredCount: 1,
+    guestCountRatio: 0,
   });
 
   const resetForm = () => {
@@ -23,25 +25,27 @@ export default function PositionManagement({ currentUser, positions, onUpdate }:
       name: '',
       displayOrder: positions.length + 1,
       isActive: true,
+      baseRequiredCount: 1,
+      guestCountRatio: 0,
     });
     setEditingPosition(null);
     setShowModal(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (editingPosition) {
-      positionStorage.update(editingPosition.id, formData);
+      await positionStorage.update(editingPosition.id, formData);
     } else {
       const newPosition: PositionMaster = {
         id: generateId(),
         ...formData,
       };
-      positionStorage.add(newPosition);
+      await positionStorage.add(newPosition);
     }
 
-    onUpdate();
+    await onUpdate();
     resetForm();
   };
 
@@ -51,20 +55,22 @@ export default function PositionManagement({ currentUser, positions, onUpdate }:
       name: position.name,
       displayOrder: position.displayOrder,
       isActive: position.isActive,
+      baseRequiredCount: position.baseRequiredCount,
+      guestCountRatio: position.guestCountRatio,
     });
     setShowModal(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('この役職を削除してもよろしいですか？\n既存スタッフの役職情報は保持されます。')) {
-      positionStorage.delete(id);
-      onUpdate();
+      await positionStorage.delete(id);
+      await onUpdate();
     }
   };
 
-  const handleToggleActive = (id: string, isActive: boolean) => {
-    positionStorage.update(id, { isActive });
-    onUpdate();
+  const handleToggleActive = async (id: string, isActive: boolean) => {
+    await positionStorage.update(id, { isActive });
+    await onUpdate();
   };
 
   const handleMoveUp = (position: PositionMaster) => {
@@ -220,6 +226,41 @@ export default function PositionManagement({ currentUser, positions, onUpdate }:
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   数字が小さいほど上に表示されます
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  基準必要人数（1日あたり）
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  value={formData.baseRequiredCount}
+                  onChange={(e) => setFormData({ ...formData, baseRequiredCount: parseInt(e.target.value) })}
+                  className="input w-full"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  標準的な1日に必要な人数
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  予約客数による変動率
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  step="0.01"
+                  value={formData.guestCountRatio}
+                  onChange={(e) => setFormData({ ...formData, guestCountRatio: parseFloat(e.target.value) })}
+                  className="input w-full"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  例: 0.1 = 予約客10人につき+1人必要
                 </p>
               </div>
 

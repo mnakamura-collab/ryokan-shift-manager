@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import type { Staff, Shift } from '../types';
-import { formatDate, getDaysInMonth, getPositionColor } from '../utils/helpers';
+import { formatDate, getDaysInMonth, getPositionColor, formatDateJP } from '../utils/helpers';
 import ShiftModal from './ShiftModal';
+import ShiftTimeline from './ShiftTimeline';
 
 interface ShiftCalendarProps {
   currentUser: Staff;
@@ -17,6 +18,7 @@ export default function ShiftCalendar({ currentUser, staff, shifts, onUpdate }: 
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState('');
   const [editingShift, setEditingShift] = useState<Shift | null>(null);
+  const [viewingTimelineDate, setViewingTimelineDate] = useState<string | null>(null);
 
   const daysInMonth = getDaysInMonth(currentYear, currentMonth);
   const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay();
@@ -62,6 +64,71 @@ export default function ShiftCalendar({ currentUser, staff, shifts, onUpdate }: 
     setEditingShift(null);
   };
 
+  const handleDateClick = (day: number) => {
+    const date = formatDate(new Date(currentYear, currentMonth - 1, day));
+    setViewingTimelineDate(date);
+  };
+
+  const goToPreviousDay = () => {
+    if (!viewingTimelineDate) return;
+    const currentDate = new Date(viewingTimelineDate);
+    currentDate.setDate(currentDate.getDate() - 1);
+    setViewingTimelineDate(formatDate(currentDate));
+  };
+
+  const goToNextDay = () => {
+    if (!viewingTimelineDate) return;
+    const currentDate = new Date(viewingTimelineDate);
+    currentDate.setDate(currentDate.getDate() + 1);
+    setViewingTimelineDate(formatDate(currentDate));
+  };
+
+  // タイムライン表示中の場合
+  if (viewingTimelineDate) {
+    const dateShifts = shifts.filter((s) => s.date === viewingTimelineDate);
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setViewingTimelineDate(null)}
+            className="btn btn-secondary"
+          >
+            ← カレンダーに戻る
+          </button>
+
+          <div className="flex items-center gap-2 ml-auto">
+            <button
+              onClick={goToPreviousDay}
+              className="p-2 hover:bg-gray-100 rounded transition-colors"
+              title="前日"
+            >
+              <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <span className="text-lg font-semibold text-gray-800 min-w-[200px] text-center">
+              {formatDateJP(viewingTimelineDate)}
+            </span>
+            <button
+              onClick={goToNextDay}
+              className="p-2 hover:bg-gray-100 rounded transition-colors"
+              title="翌日"
+            >
+              <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <ShiftTimeline
+          shifts={dateShifts}
+          staff={staff}
+          title=""
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="card">
       <div className="flex justify-between items-center mb-6">
@@ -95,7 +162,8 @@ export default function ShiftCalendar({ currentUser, staff, shifts, onUpdate }: 
           return (
             <div
               key={day}
-              className={`border rounded p-2 min-h-24 ${isToday ? 'bg-primary-50 border-primary-400' : 'bg-white'}`}
+              onClick={() => handleDateClick(day)}
+              className={`border rounded p-2 min-h-24 cursor-pointer hover:bg-gray-50 transition-colors ${isToday ? 'bg-primary-50 border-primary-400' : 'bg-white'}`}
             >
               <div className="font-semibold text-sm mb-1">{day}</div>
               <div className="space-y-1">
@@ -104,7 +172,10 @@ export default function ShiftCalendar({ currentUser, staff, shifts, onUpdate }: 
                   return (
                     <div
                       key={shift.id}
-                      onClick={() => currentUser.role === 'admin' && handleEditShift(shift)}
+                      onClick={(e) => {
+                        e.stopPropagation(); // 親要素のクリックイベントを止める
+                        currentUser.role === 'admin' && handleEditShift(shift);
+                      }}
                       className={`text-xs p-1 rounded ${getPositionColor(shift.position)} ${currentUser.role === 'admin' ? 'cursor-pointer hover:opacity-80' : ''}`}
                     >
                       {staffMember?.name}
@@ -117,7 +188,10 @@ export default function ShiftCalendar({ currentUser, staff, shifts, onUpdate }: 
               </div>
               {currentUser.role === 'admin' && (
                 <button
-                  onClick={() => handleAddShift(day)}
+                  onClick={(e) => {
+                    e.stopPropagation(); // 親要素のクリックイベントを止める
+                    handleAddShift(day);
+                  }}
                   className="text-xs text-primary-600 hover:text-primary-800 mt-1"
                 >
                   + 追加

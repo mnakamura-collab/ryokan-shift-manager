@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import type { Staff, Reservation } from '../types';
-import { reservationStorage } from '../utils/storage';
+import { reservationStorage } from '../utils/supabaseStorage';
 import { generateId, formatDateJP } from '../utils/helpers';
 import { parseReservationCSV, convertToReservations, generateSampleCSV } from '../utils/csvParser';
 
@@ -39,11 +39,11 @@ export default function ReservationManagement({ currentUser, reservations, onUpd
     setShowAddModal(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (editingReservation) {
-      reservationStorage.update(editingReservation.id, {
+      await reservationStorage.update(editingReservation.id, {
         guestName: formData.guestName,
         checkInDate: formData.checkInDate,
         checkOutDate: formData.checkOutDate,
@@ -61,10 +61,10 @@ export default function ReservationManagement({ currentUser, reservations, onUpd
         plan: formData.plan,
         requiredStaff: formData.requiredStaff,
       };
-      reservationStorage.add(newReservation);
+      await reservationStorage.add(newReservation);
     }
 
-    onUpdate();
+    await onUpdate();
     resetForm();
   };
 
@@ -81,10 +81,10 @@ export default function ReservationManagement({ currentUser, reservations, onUpd
     setShowAddModal(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('この予約を削除してもよろしいですか？')) {
-      reservationStorage.delete(id);
-      onUpdate();
+      await reservationStorage.delete(id);
+      await onUpdate();
     }
   };
 
@@ -108,14 +108,14 @@ export default function ReservationManagement({ currentUser, reservations, onUpd
     reader.readAsText(file, 'UTF-8');
   };
 
-  const handleImport = () => {
+  const handleImport = async () => {
     if (importPreview.length === 0) return;
 
-    importPreview.forEach((reservation) => {
-      reservationStorage.add(reservation);
-    });
+    for (const reservation of importPreview) {
+      await reservationStorage.add(reservation);
+    }
 
-    onUpdate();
+    await onUpdate();
     setShowImportModal(false);
     setImportPreview([]);
     setImportError('');

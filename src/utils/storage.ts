@@ -308,13 +308,13 @@ export function setupInitialData(): void {
   // 役職マスタの初期化
   if (positionStorage.getAll().length === 0) {
     const defaultPositions: PositionMaster[] = [
-      { id: '1', name: 'フロント', displayOrder: 1, isActive: true },
-      { id: '2', name: '清掃', displayOrder: 2, isActive: true },
-      { id: '3', name: 'レストラン', displayOrder: 3, isActive: true },
-      { id: '4', name: '配膳', displayOrder: 4, isActive: true },
-      { id: '5', name: '喫茶店', displayOrder: 5, isActive: true },
-      { id: '6', name: '調理', displayOrder: 6, isActive: true },
-      { id: '7', name: 'その他', displayOrder: 7, isActive: true },
+      { id: '1', name: 'フロント', displayOrder: 1, isActive: true, baseRequiredCount: 2, guestCountRatio: 0.1 },
+      { id: '2', name: '清掃', displayOrder: 2, isActive: true, baseRequiredCount: 3, guestCountRatio: 0.15 },
+      { id: '3', name: 'レストラン', displayOrder: 3, isActive: true, baseRequiredCount: 1, guestCountRatio: 0.05 },
+      { id: '4', name: '配膳', displayOrder: 4, isActive: true, baseRequiredCount: 1, guestCountRatio: 0.05 },
+      { id: '5', name: '喫茶店', displayOrder: 5, isActive: true, baseRequiredCount: 1, guestCountRatio: 0.0 },
+      { id: '6', name: '調理', displayOrder: 6, isActive: true, baseRequiredCount: 2, guestCountRatio: 0.08 },
+      { id: '7', name: 'その他', displayOrder: 7, isActive: true, baseRequiredCount: 1, guestCountRatio: 0.0 },
     ];
     positionStorage.save(defaultPositions);
   }
@@ -328,27 +328,31 @@ export function setupInitialData(): void {
         position: 'フロント',
         trustScore: 100,
         role: 'admin',
+        isActive: true,
       },
       {
         id: '2',
         name: '山田太郎',
         position: 'フロント',
         trustScore: 95,
-        role: 'staff',
+        role: 'user',
+        isActive: true,
       },
       {
         id: '3',
         name: '佐藤花子',
         position: '清掃',
         trustScore: 98,
-        role: 'staff',
+        role: 'user',
+        isActive: true,
       },
       {
         id: '4',
         name: '鈴木一郎',
         position: '調理',
         trustScore: 90,
-        role: 'staff',
+        role: 'user',
+        isActive: true,
       },
     ];
     staffStorage.save(demoStaff);

@@ -7,10 +7,12 @@ export interface PositionMaster {
   name: string;
   displayOrder: number;
   isActive: boolean;
+  baseRequiredCount: number; // 標準的な1日の必要人数
+  guestCountRatio: number; // 予約客数による変動率（例: 0.1 = 客10人につき+1人）
 }
 
 // ユーザーロール
-export type UserRole = 'admin' | 'staff';
+export type UserRole = 'admin' | 'user';
 
 // スタッフ情報
 export interface Staff {
@@ -19,6 +21,7 @@ export interface Staff {
   position: Position;
   trustScore: number; // 信頼度スコア（0-100）
   role: UserRole;
+  isActive: boolean;
 }
 
 // シフト時間帯
@@ -35,8 +38,9 @@ export interface Shift {
   position: Position;
   startTime: string;
   endTime: string;
-  isStandard: boolean; // 標準シフトかどうか
-  isConfirmed: boolean; // 確定しているか
+  isStandard?: boolean; // 標準シフトかどうか
+  isConfirmed?: boolean; // 確定しているか
+  isCompleted?: boolean; // 完了しているか
   lastModified?: Date; // 最終変更日時
 }
 

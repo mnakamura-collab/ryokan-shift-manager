@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Staff } from '../types';
-import { staffStorage } from '../utils/storage';
+import { staffStorage } from '../utils/supabaseStorage';
 
 interface LoginProps {
   onLogin: (user: Staff) => void;
@@ -8,7 +8,19 @@ interface LoginProps {
 
 export default function Login({ onLogin }: LoginProps) {
   const [selectedStaff, setSelectedStaff] = useState('');
-  const staff = staffStorage.getAll();
+  const [staff, setStaff] = useState<Staff[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadStaff = async () => {
+      console.log('Loading staff data...');
+      const data = await staffStorage.getAll();
+      console.log('Staff data loaded:', data);
+      setStaff(data);
+      setLoading(false);
+    };
+    loadStaff();
+  }, []);
 
   const handleLogin = () => {
     const user = staff.find((s) => s.id === selectedStaff);
@@ -16,6 +28,16 @@ export default function Login({ onLogin }: LoginProps) {
       onLogin(user);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="card max-w-md w-full text-center">
+          <p className="text-gray-600">読み込み中...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">

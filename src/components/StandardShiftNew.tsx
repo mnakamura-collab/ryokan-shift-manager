@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import type { Staff, StaffStandardSchedule } from '../types';
-import { staffScheduleStorage, shiftStorage } from '../utils/storage';
+import { useState, useEffect } from 'react';
+import type { Staff, StaffStandardSchedule, Shift } from '../types';
+import { staffScheduleStorage, shiftStorage } from '../utils/supabaseStorage';
 import { generateId, formatDate } from '../utils/helpers';
 
 interface StandardShiftProps {
@@ -14,6 +14,7 @@ const daysOfWeek = ['日', '月', '火', '水', '木', '金', '土'];
 export default function StandardShiftNew({ currentUser, staff, onUpdate }: StandardShiftProps) {
   const [selectedStaffId, setSelectedStaffId] = useState<string>('');
   const [showModal, setShowModal] = useState(false);
+  const [schedules, setSchedules] = useState<StaffStandardSchedule[]>([]);
   const [formData, setFormData] = useState({
     hoursPerDay: 8,
     daysPerWeek: 5,
@@ -21,39 +22,55 @@ export default function StandardShiftNew({ currentUser, staff, onUpdate }: Stand
     preferredDaysOfWeek: [1, 2, 3, 4, 5], // 月-金
   });
 
-  const schedules = staffScheduleStorage.getAll();
+  useEffect(() => {
+    const loadSchedules = async () => {
+      const data = await staffScheduleStorage.getAll();
+      setSchedules(data);
+    };
+    loadSchedules();
+  }, []);
 
-  const handleAddSchedule = () => {
+  const handleAddSchedule = async () => {
     if (!selectedStaffId) {
       alert('スタッフを選択してください');
       return;
     }
 
-    const existingSchedule = staffScheduleStorage.getByStaff(selectedStaffId);
-    if (existingSchedule) {
-      staffScheduleStorage.update(existingSchedule.id, {
-        ...formData,
-        isActive: true,
-      });
-    } else {
-      const newSchedule: StaffStandardSchedule = {
-        id: generateId(),
-        staffId: selectedStaffId,
-        ...formData,
-        isActive: true,
-      };
-      staffScheduleStorage.add(newSchedule);
-    }
+    try {
+      const existingSchedule = await staffScheduleStorage.getByStaffId(selectedStaffId);
+      if (existingSchedule) {
+        await staffScheduleStorage.update(existingSchedule.id, {
+          ...formData,
+          isActive: true,
+        });
+      } else {
+        const newSchedule: StaffStandardSchedule = {
+          id: generateId(),
+          staffId: selectedStaffId,
+          ...formData,
+          isActive: true,
+        };
+        console.log('Adding schedule:', newSchedule);
+        await staffScheduleStorage.add(newSchedule);
+      }
 
-    onUpdate();
-    setShowModal(false);
-    setSelectedStaffId('');
-    setFormData({
-      hoursPerDay: 8,
-      daysPerWeek: 5,
-      preferredStartTime: '09:00',
-      preferredDaysOfWeek: [1, 2, 3, 4, 5],
-    });
+      await onUpdate();
+      // スケジュールリストを再取得
+      const updatedSchedules = await staffScheduleStorage.getAll();
+      setSchedules(updatedSchedules);
+
+      setShowModal(false);
+      setSelectedStaffId('');
+      setFormData({
+        hoursPerDay: 8,
+        daysPerWeek: 5,
+        preferredStartTime: '09:00',
+        preferredDaysOfWeek: [1, 2, 3, 4, 5],
+      });
+    } catch (error) {
+      console.error('Error in handleAddSchedule:', error);
+      alert('標準シフトの保存に失敗しました');
+    }
   };
 
   const handleEditSchedule = (schedule: StaffStandardSchedule) => {
@@ -67,10 +84,13 @@ export default function StandardShiftNew({ currentUser, staff, onUpdate }: Stand
     setShowModal(true);
   };
 
-  const handleDeleteSchedule = (id: string) => {
+  const handleDeleteSchedule = async (id: string) => {
     if (confirm('この標準設定を削除してもよろしいですか？')) {
-      staffScheduleStorage.delete(id);
-      onUpdate();
+      await staffScheduleStorage.delete(id);
+      await onUpdate();
+      // スケジュールリストを再取得
+      const updatedSchedules = await staffScheduleStorage.getAll();
+      setSchedules(updatedSchedules);
     }
   };
 
@@ -89,75 +109,95 @@ export default function StandardShiftNew({ currentUser, staff, onUpdate }: Stand
     }
   };
 
-  const handleGenerateShifts = () => {
+  const handleGenerateShifts = async () => {
     if (!confirm('標準設定に基づいて今月のシフトを自動生成しますか？既存のシフトは上書きされません。')) {
       return;
     }
 
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    try {
+      console.log('Generating shifts from schedules:', schedules);
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-    let addedCount = 0;
+      let addedCount = 0;
 
-    schedules.forEach((schedule) => {
-      if (!schedule.isActive) return;
+      for (const schedule of schedules) {
+        if (!schedule.isActive) continue;
 
-      const staffMember = staff.find((s) => s.id === schedule.staffId);
-      if (!staffMember) return;
+        const staffMember = staff.find((s) => s.id === schedule.staffId);
+        if (!staffMember) continue;
 
-      // 月内で希望曜日の日付を取得
-      const targetDays: Date[] = [];
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(year, month, day);
-        if (schedule.preferredDaysOfWeek.includes(date.getDay())) {
-          targetDays.push(date);
+        // 月内で希望曜日の日付を取得
+        const targetDays: Date[] = [];
+        for (let day = 1; day <= daysInMonth; day++) {
+          const date = new Date(year, month, day);
+          if (schedule.preferredDaysOfWeek.includes(date.getDay())) {
+            targetDays.push(date);
+          }
+        }
+
+        // 週の勤務日数に基づいて均等に配分
+        const weeksInMonth = Math.ceil(daysInMonth / 7);
+        const totalDaysToSchedule = Math.min(
+          schedule.daysPerWeek * weeksInMonth,
+          targetDays.length
+        );
+
+        // 均等に日付を選択
+        const interval = Math.floor(targetDays.length / totalDaysToSchedule);
+        const selectedDays = targetDays.filter((_, index) => index % Math.max(1, interval) === 0)
+          .slice(0, totalDaysToSchedule);
+
+        for (const date of selectedDays) {
+          console.log('Date object:', date);
+          console.log('Type of date:', typeof date, date instanceof Date);
+          const dateStr = formatDate(date);
+          console.log('Formatted date string:', dateStr);
+
+          // 既存のシフトがあればスキップ
+          const existingShifts = await shiftStorage.getByDate(dateStr);
+          if (existingShifts.some((s) => s.staffId === schedule.staffId)) {
+            continue;
+          }
+
+          // 終了時刻を計算（日をまたぐ夜勤にも対応）
+          const [hours, minutes] = schedule.preferredStartTime.split(':').map(Number);
+          let endHour = hours + schedule.hoursPerDay;
+          let endMinutes = minutes;
+
+          // 24時を超える場合は翌日の時刻に変換（例：26:00 → 02:00）
+          if (endHour >= 24) {
+            endHour = endHour % 24;
+            console.log(`Night shift detected: crossing midnight, end hour: ${endHour}:${String(endMinutes).padStart(2, '0')}`);
+          }
+
+          const endTime = `${String(endHour).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
+
+          // IDはSupabaseが自動生成するため含めない
+          const newShift: Shift = {
+            id: '', // IDは使用されないが型定義上必要
+            staffId: schedule.staffId,
+            date: dateStr,
+            position: staffMember.position,
+            startTime: schedule.preferredStartTime,
+            endTime: endTime,
+            isStandard: false,
+            isConfirmed: false,
+          };
+          console.log('About to add shift:', JSON.stringify(newShift, null, 2));
+          await shiftStorage.add(newShift);
+          addedCount++;
         }
       }
 
-      // 週の勤務日数に基づいて均等に配分
-      const weeksInMonth = Math.ceil(daysInMonth / 7);
-      const totalDaysToSchedule = Math.min(
-        schedule.daysPerWeek * weeksInMonth,
-        targetDays.length
-      );
-
-      // 均等に日付を選択
-      const interval = Math.floor(targetDays.length / totalDaysToSchedule);
-      const selectedDays = targetDays.filter((_, index) => index % Math.max(1, interval) === 0)
-        .slice(0, totalDaysToSchedule);
-
-      selectedDays.forEach((date) => {
-        const dateStr = formatDate(date);
-
-        // 既存のシフトがあればスキップ
-        const existingShifts = shiftStorage.getByDate(dateStr);
-        if (existingShifts.some((s) => s.staffId === schedule.staffId)) {
-          return;
-        }
-
-        // 終了時刻を計算
-        const [hours, minutes] = schedule.preferredStartTime.split(':').map(Number);
-        const endHour = hours + schedule.hoursPerDay;
-        const endTime = `${String(endHour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-
-        shiftStorage.add({
-          id: generateId(),
-          staffId: schedule.staffId,
-          date: dateStr,
-          position: staffMember.position,
-          startTime: schedule.preferredStartTime,
-          endTime: endTime,
-          isStandard: false,
-          isConfirmed: false,
-        });
-        addedCount++;
-      });
-    });
-
-    onUpdate();
-    alert(`${addedCount}件のシフトを自動生成しました`);
+      await onUpdate();
+      alert(`${addedCount}件のシフトを自動生成しました`);
+    } catch (error) {
+      console.error('Error generating shifts:', error);
+      alert('シフトの自動生成に失敗しました');
+    }
   };
 
   if (currentUser.role !== 'admin') {

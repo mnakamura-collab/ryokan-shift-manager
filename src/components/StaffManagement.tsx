@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import type { Staff, Position } from '../types';
-import { staffStorage, positionStorage } from '../utils/storage';
+import { staffStorage, positionStorage } from '../utils/supabaseStorage';
 import { generateId, getTrustScoreColor } from '../utils/helpers';
 import { parseStaffCSV, convertToStaff, generateStaffSampleCSV } from '../utils/csvParser';
 
@@ -13,8 +13,11 @@ export default function StaffManagement({ staff, onUpdate }: StaffManagementProp
   const [positions, setPositions] = useState<string[]>([]);
 
   useEffect(() => {
-    const activePositions = positionStorage.getActive();
-    setPositions(activePositions.map(p => p.name));
+    const loadPositions = async () => {
+      const activePositions = await positionStorage.getActive();
+      setPositions(activePositions.map(p => p.name));
+    };
+    loadPositions();
   }, []);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -25,7 +28,7 @@ export default function StaffManagement({ staff, onUpdate }: StaffManagementProp
   const [formData, setFormData] = useState({
     name: '',
     position: '' as Position,
-    role: 'staff' as 'admin' | 'staff',
+    role: 'user' as 'admin' | 'user',
   });
 
   useEffect(() => {
@@ -38,17 +41,17 @@ export default function StaffManagement({ staff, onUpdate }: StaffManagementProp
     setFormData({
       name: '',
       position: positions.length > 0 ? positions[0] : '',
-      role: 'staff',
+      role: 'user',
     });
     setEditingStaff(null);
     setShowAddModal(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (editingStaff) {
-      staffStorage.update(editingStaff.id, {
+      await staffStorage.update(editingStaff.id, {
         name: formData.name,
         position: formData.position,
         role: formData.role,
@@ -60,11 +63,12 @@ export default function StaffManagement({ staff, onUpdate }: StaffManagementProp
         position: formData.position,
         role: formData.role,
         trustScore: 100,
+        isActive: true,
       };
-      staffStorage.add(newStaff);
+      await staffStorage.add(newStaff);
     }
 
-    onUpdate();
+    await onUpdate();
     resetForm();
   };
 
@@ -78,10 +82,10 @@ export default function StaffManagement({ staff, onUpdate }: StaffManagementProp
     setShowAddModal(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('このスタッフを削除してもよろしいですか？')) {
-      staffStorage.delete(id);
-      onUpdate();
+      await staffStorage.delete(id);
+      await onUpdate();
     }
   };
 
@@ -105,14 +109,14 @@ export default function StaffManagement({ staff, onUpdate }: StaffManagementProp
     reader.readAsText(file, 'UTF-8');
   };
 
-  const handleImport = () => {
+  const handleImport = async () => {
     if (importPreview.length === 0) return;
 
-    importPreview.forEach((staffMember) => {
-      staffStorage.add(staffMember);
-    });
+    for (const staffMember of importPreview) {
+      await staffStorage.add(staffMember);
+    }
 
-    onUpdate();
+    await onUpdate();
     setShowImportModal(false);
     setImportPreview([]);
     setImportError('');
@@ -258,10 +262,10 @@ export default function StaffManagement({ staff, onUpdate }: StaffManagementProp
                 </label>
                 <select
                   value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'staff' })}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'user' })}
                   className="input w-full"
                 >
-                  <option value="staff">スタッフ</option>
+                  <option value="user">スタッフ</option>
                   <option value="admin">管理者</option>
                 </select>
               </div>
