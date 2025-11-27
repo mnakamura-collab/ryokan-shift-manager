@@ -120,3 +120,95 @@ export interface StaffStandardSchedule {
   preferredDaysOfWeek: number[]; // 希望勤務曜日 (0-6の配列)
   isActive: boolean; // 有効/無効
 }
+
+// ========================================
+// 自動シフト管理機能の型定義
+// ========================================
+
+// 時間帯マスタ
+export interface TimeSlot {
+  id: string;
+  name: string;                // '早朝', '午前', etc.
+  startTime: string;           // '05:00'
+  endTime: string;             // '09:00'
+  displayOrder: number;
+  isActive: boolean;
+}
+
+// 役職別必要人数設定（日別・時間帯別）
+export interface DailyStaffRequirement {
+  id: string;
+  date: string;                    // 'YYYY-MM-DD'
+  position: Position;
+  timeSlotId: string;
+  requiredCount: number;           // 基本必要人数
+
+  // 稼働率による変動設定
+  roomOccupancyBonus?: number;     // 客室稼働率10%ごとに+X人
+  banquetBonus?: number;           // 宴会ありなら+X人
+}
+
+// スタッフの勤務可能時間（曜日別）
+export interface StaffAvailability {
+  id: string;
+  staffId: string;
+  dayOfWeek: number;               // 0-6 (日曜-土曜)
+  isAvailable: boolean;
+  availableStartTime?: string;     // '09:00'
+  availableEndTime?: string;       // '17:00'
+  lastModified: string;            // 最終変更日時
+}
+
+// スタッフの労働時間制約
+export interface StaffWorkLimit {
+  id: string;
+  staffId: string;
+  maxHoursPerWeek: number;         // 週40時間など
+  maxHoursPerMonth: number;        // 月160時間など
+  maxConsecutiveDays: number;      // 連続5日まで
+}
+
+// 希望休・不可日設定
+export interface StaffUnavailableDate {
+  id: string;
+  staffId: string;
+  date: string;                    // 'YYYY-MM-DD'
+  unavailableType: 'all_day' | 'time_slot';
+  timeSlotIds?: string[];          // 時間帯指定の場合
+  reason?: string;                 // '希望休', '有給', etc.
+  status: 'pending' | 'approved' | 'rejected';
+}
+
+// スタッフアサイン優先度設定
+export interface StaffPriority {
+  id: string;
+  staffId: string;
+  position: Position;
+  priorityScore: number;           // 0-100, 高いほど優先
+
+  // 複数基準の重み設定
+  trustScoreWeight: number;        // 信頼度の重み
+  seniorityWeight: number;         // 経験年数の重み
+  customWeight: number;            // 手動調整の重み
+}
+
+// 必須スタッフ設定
+export interface RequiredStaffAssignment {
+  id: string;
+  date: string;                    // 'YYYY-MM-DD'
+  timeSlotId: string;
+  position: Position;
+  staffId: string;
+  reason?: string;
+}
+
+// 客室・宴会稼働情報
+export interface DailyOccupancy {
+  id: string;
+  date: string;                    // 'YYYY-MM-DD'
+  roomOccupancyRate: number;       // 0-100 (%)
+  totalRooms: number;
+  occupiedRooms: number;
+  hasBanquet: boolean;
+  banquetGuestCount?: number;
+}
