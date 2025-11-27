@@ -68,10 +68,6 @@ export default function MonthlyStaffView({
         }
       }
     `,
-    onBeforeGetContent: () => {
-      console.log('PDF出力準備中...');
-      return Promise.resolve();
-    },
     onAfterPrint: () => {
       console.log('PDF出力完了');
     },

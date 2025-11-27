@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import type { Staff, Shift } from '../types';
 import { getPositionColor, generateId } from '../utils/helpers';
 import { shiftStorage } from '../utils/supabaseStorage';
@@ -24,7 +24,6 @@ export default function InteractiveShiftTimeline({
   const [hoveredStaffId, setHoveredStaffId] = useState<string | null>(null);
   const [hoveredShiftId, setHoveredShiftId] = useState<string | null>(null);
   const [resizingShift, setResizingShift] = useState<{ shiftId: string; edge: 'start' | 'end'; originalStart: number; originalEnd: number } | null>(null);
-  const timelineRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   // 時刻から秒を削除（HH:MM:SS -> HH:MM）
   const formatTime = (time: string): string => {
@@ -141,7 +140,7 @@ export default function InteractiveShiftTimeline({
   };
 
   // リサイズ中
-  const handleResizeMove = (e: React.MouseEvent<HTMLDivElement>, staffId: string) => {
+  const handleResizeMove = (e: React.MouseEvent<HTMLDivElement>, _staffId: string) => {
     if (!resizingShift) return;
 
     const element = e.currentTarget;

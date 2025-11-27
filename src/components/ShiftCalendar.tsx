@@ -2,7 +2,6 @@ import { useState } from 'react';
 import type { Staff, Shift } from '../types';
 import { formatDate, getDaysInMonth, getPositionColor, formatDateJP } from '../utils/helpers';
 import ShiftModal from './ShiftModal';
-import ShiftTimeline from './ShiftTimeline';
 import InteractiveShiftTimeline from './InteractiveShiftTimeline';
 import MonthlyStaffView from './MonthlyStaffView';
 

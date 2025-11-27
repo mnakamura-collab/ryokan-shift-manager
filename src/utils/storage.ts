@@ -329,6 +329,10 @@ export function setupInitialData(): void {
         trustScore: 100,
         role: 'admin',
         isActive: true,
+        loginId: 'admin@example.com',
+        passwordHash: 'admin',
+        email: 'admin@example.com',
+        is2faEnabled: false,
       },
       {
         id: '2',
@@ -337,6 +341,10 @@ export function setupInitialData(): void {
         trustScore: 95,
         role: 'user',
         isActive: true,
+        loginId: 'yamada@example.com',
+        passwordHash: 'password',
+        email: 'yamada@example.com',
+        is2faEnabled: false,
       },
       {
         id: '3',
@@ -345,6 +353,10 @@ export function setupInitialData(): void {
         trustScore: 98,
         role: 'user',
         isActive: true,
+        loginId: 'sato@example.com',
+        passwordHash: 'password',
+        email: 'sato@example.com',
+        is2faEnabled: false,
       },
       {
         id: '4',
@@ -353,6 +365,10 @@ export function setupInitialData(): void {
         trustScore: 90,
         role: 'user',
         isActive: true,
+        loginId: 'suzuki@example.com',
+        passwordHash: 'password',
+        email: 'suzuki@example.com',
+        is2faEnabled: false,
       },
     ];
     staffStorage.save(demoStaff);

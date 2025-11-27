@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Staff, Shift, Reservation, PositionMaster } from './types';
 import { setupInitialData, staffStorage, shiftStorage, reservationStorage, currentUserStorage, positionStorage } from './utils/supabaseStorage';
-import { getToday, formatDateJP, getDayOfWeek } from './utils/helpers';
+import { getToday, formatDateJP } from './utils/helpers';
 import TodayShift from './components/TodayShift';
 import ShiftCalendar from './components/ShiftCalendar';
 import StaffManagement from './components/StaffManagement';
