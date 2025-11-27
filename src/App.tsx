@@ -20,7 +20,8 @@ function App() {
   // localStorageから前回のタブを復元（なければ'today'）
   const [activeTab, setActiveTab] = useState<'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions' | 'account' | 'timeslots' | 'approval'>(() => {
     const savedTab = localStorage.getItem('activeTab');
-    return (savedTab as 'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions' | 'account' | 'timeslots' | 'approval') || 'today';
+    const validTabs = ['today', 'calendar', 'standard', 'reservation', 'review', 'completion', 'staff', 'positions', 'account', 'timeslots', 'approval'];
+    return validTabs.includes(savedTab || '') ? (savedTab as 'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions' | 'account' | 'timeslots' | 'approval') : 'today';
   });
   const [staff, setStaff] = useState<Staff[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
