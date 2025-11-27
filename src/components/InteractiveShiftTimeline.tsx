@@ -206,9 +206,14 @@ export default function InteractiveShiftTimeline({
         endTime: endTimeStr,
       });
       await onUpdate();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating shift:', error);
-      alert('シフトの更新に失敗しました');
+      // Unique constraint違反のエラーをチェック
+      if (error?.code === '23505' || error?.message?.includes('duplicate') || error?.message?.includes('unique')) {
+        alert('この日は既に他の予定が入っています');
+      } else {
+        alert('シフトの更新に失敗しました');
+      }
     }
 
     setResizingShift(null);
@@ -296,9 +301,14 @@ export default function InteractiveShiftTimeline({
 
       await shiftStorage.add(newShift);
       await onUpdate();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating shift:', error);
-      alert('シフトの作成に失敗しました');
+      // Unique constraint違反のエラーをチェック
+      if (error?.code === '23505' || error?.message?.includes('duplicate') || error?.message?.includes('unique')) {
+        alert('この日は既に他の予定が入っています');
+      } else {
+        alert('シフトの作成に失敗しました');
+      }
     }
 
     setIsDragging(false);
