@@ -29,6 +29,8 @@ export default function StaffManagement({ staff, onUpdate }: StaffManagementProp
     name: '',
     position: '' as Position,
     role: 'user' as 'admin' | 'user',
+    email: '',
+    password: 'password',
   });
 
   useEffect(() => {
@@ -42,6 +44,8 @@ export default function StaffManagement({ staff, onUpdate }: StaffManagementProp
       name: '',
       position: positions.length > 0 ? positions[0] : '',
       role: 'user',
+      email: '',
+      password: 'password',
     });
     setEditingStaff(null);
     setShowAddModal(false);
@@ -55,6 +59,7 @@ export default function StaffManagement({ staff, onUpdate }: StaffManagementProp
         name: formData.name,
         position: formData.position,
         role: formData.role,
+        email: formData.email,
       });
     } else {
       const newStaff: Staff = {
@@ -64,6 +69,10 @@ export default function StaffManagement({ staff, onUpdate }: StaffManagementProp
         role: formData.role,
         trustScore: 100,
         isActive: true,
+        email: formData.email,
+        loginId: formData.email,
+        passwordHash: formData.password,
+        is2faEnabled: false,
       };
       await staffStorage.add(newStaff);
     }
@@ -78,6 +87,8 @@ export default function StaffManagement({ staff, onUpdate }: StaffManagementProp
       name: staffMember.name,
       position: staffMember.position,
       role: staffMember.role,
+      email: staffMember.email,
+      password: 'password',
     });
     setShowAddModal(true);
   };
@@ -269,6 +280,39 @@ export default function StaffManagement({ staff, onUpdate }: StaffManagementProp
                   <option value="admin">管理者</option>
                 </select>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  メールアドレス
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="input w-full"
+                  placeholder="staff@example.com"
+                />
+              </div>
+
+              {!editingStaff && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    初期パスワード
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="input w-full"
+                    placeholder="password"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    ※ 初回ログイン後に変更してもらってください
+                  </p>
+                </div>
+              )}
 
               <div className="flex gap-3 pt-2">
                 <button

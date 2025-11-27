@@ -21,6 +21,12 @@ export const staffStorage = {
       role: item.role as 'admin' | 'user',
       trustScore: item.trust_score,
       isActive: item.is_active,
+      loginId: item.login_id || '',
+      passwordHash: item.password_hash || '',
+      email: item.email || '',
+      is2faEnabled: item.is_2fa_enabled || false,
+      otpSecret: item.otp_secret,
+      otpExpiresAt: item.otp_expires_at,
     }));
   },
 
@@ -50,6 +56,12 @@ export const staffStorage = {
       role: staff.role,
       trust_score: staff.trustScore,
       is_active: staff.isActive,
+      login_id: staff.loginId,
+      password_hash: staff.passwordHash,
+      email: staff.email,
+      is_2fa_enabled: staff.is2faEnabled,
+      otp_secret: staff.otpSecret,
+      otp_expires_at: staff.otpExpiresAt,
     });
 
     if (error) {
@@ -65,6 +77,12 @@ export const staffStorage = {
     if (updates.role !== undefined) updateData.role = updates.role;
     if (updates.trustScore !== undefined) updateData.trust_score = updates.trustScore;
     if (updates.isActive !== undefined) updateData.is_active = updates.isActive;
+    if (updates.loginId !== undefined) updateData.login_id = updates.loginId;
+    if (updates.passwordHash !== undefined) updateData.password_hash = updates.passwordHash;
+    if (updates.email !== undefined) updateData.email = updates.email;
+    if (updates.is2faEnabled !== undefined) updateData.is_2fa_enabled = updates.is2faEnabled;
+    if (updates.otpSecret !== undefined) updateData.otp_secret = updates.otpSecret;
+    if (updates.otpExpiresAt !== undefined) updateData.otp_expires_at = updates.otpExpiresAt;
 
     const { error } = await supabase
       .from('staff')
@@ -99,7 +117,95 @@ export const staffStorage = {
       role: data.role as 'admin' | 'user',
       trustScore: data.trust_score,
       isActive: data.is_active,
+      loginId: data.login_id || '',
+      passwordHash: data.password_hash || '',
+      email: data.email || '',
+      is2faEnabled: data.is_2fa_enabled || false,
+      otpSecret: data.otp_secret,
+      otpExpiresAt: data.otp_expires_at,
     };
+  },
+
+  // メールアドレス認証（第一段階）
+  authenticate: async (email: string, password: string): Promise<Staff | null> => {
+    const { data, error } = await supabase
+      .from('staff')
+      .select('*')
+      .eq('email', email)
+      .eq('password_hash', password)
+      .eq('is_active', true)
+      .single();
+
+    if (error || !data) return null;
+
+    return {
+      id: data.id,
+      name: data.name,
+      position: data.position,
+      role: data.role as 'admin' | 'user',
+      trustScore: data.trust_score,
+      isActive: data.is_active,
+      loginId: data.login_id,
+      passwordHash: data.password_hash,
+      email: data.email,
+      is2faEnabled: data.is_2fa_enabled || false,
+      otpSecret: data.otp_secret,
+      otpExpiresAt: data.otp_expires_at,
+    };
+  },
+
+  // OTP生成と保存
+  generateOTP: async (email: string): Promise<string | null> => {
+    // 6桁のランダムな数字を生成
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10分後
+
+    const { error } = await supabase
+      .from('staff')
+      .update({
+        otp_secret: otp,
+        otp_expires_at: expiresAt,
+      })
+      .eq('email', email);
+
+    if (error) {
+      console.error('Error generating OTP:', error);
+      return null;
+    }
+
+    return otp;
+  },
+
+  // OTP検証
+  verifyOTP: async (email: string, otp: string): Promise<boolean> => {
+    const { data, error } = await supabase
+      .from('staff')
+      .select('otp_secret, otp_expires_at')
+      .eq('email', email)
+      .single();
+
+    if (error || !data) return false;
+
+    // OTPが一致し、有効期限内かチェック
+    const now = new Date();
+    const expiresAt = data.otp_expires_at ? new Date(data.otp_expires_at) : null;
+
+    if (!expiresAt || now > expiresAt) {
+      return false; // 期限切れ
+    }
+
+    return data.otp_secret === otp;
+  },
+
+  // OTPをクリア
+  clearOTP: async (email: string): Promise<void> => {
+    await supabase
+      .from('staff')
+      .update({
+        otp_secret: null,
+        otp_expires_at: null,
+      })
+      .eq('email', email);
   },
 };
 

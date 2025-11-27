@@ -15,6 +15,9 @@ export default function StandardShiftNew({ currentUser, staff, onUpdate }: Stand
   const [selectedStaffId, setSelectedStaffId] = useState<string>('');
   const [showModal, setShowModal] = useState(false);
   const [schedules, setSchedules] = useState<StaffStandardSchedule[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [progressMessage, setProgressMessage] = useState('');
   const [formData, setFormData] = useState({
     hoursPerDay: 8,
     daysPerWeek: 5,
@@ -114,6 +117,10 @@ export default function StandardShiftNew({ currentUser, staff, onUpdate }: Stand
       return;
     }
 
+    setIsGenerating(true);
+    setProgress(0);
+    setProgressMessage('シフト生成を開始しています...');
+
     try {
       console.log('Generating shifts from schedules:', schedules);
       const today = new Date();
@@ -122,12 +129,19 @@ export default function StandardShiftNew({ currentUser, staff, onUpdate }: Stand
       const daysInMonth = new Date(year, month + 1, 0).getDate();
 
       let addedCount = 0;
+      const activeSchedules = schedules.filter(s => s.isActive);
+      const totalSchedules = activeSchedules.length;
 
-      for (const schedule of schedules) {
-        if (!schedule.isActive) continue;
-
+      for (let i = 0; i < activeSchedules.length; i++) {
+        const schedule = activeSchedules[i];
         const staffMember = staff.find((s) => s.id === schedule.staffId);
-        if (!staffMember) continue;
+
+        if (!staffMember) {
+          setProgress(((i + 1) / totalSchedules) * 100);
+          continue;
+        }
+
+        setProgressMessage(`${staffMember.name} のシフトを生成中... (${i + 1}/${totalSchedules})`);
 
         // 月内で希望曜日の日付を取得
         const targetDays: Date[] = [];
@@ -190,12 +204,24 @@ export default function StandardShiftNew({ currentUser, staff, onUpdate }: Stand
           await shiftStorage.add(newShift);
           addedCount++;
         }
+
+        setProgress(((i + 1) / totalSchedules) * 100);
       }
 
+      setProgressMessage('シフト生成が完了しました！');
       await onUpdate();
-      alert(`${addedCount}件のシフトを自動生成しました`);
+
+      setTimeout(() => {
+        setIsGenerating(false);
+        setProgress(0);
+        setProgressMessage('');
+        alert(`${addedCount}件のシフトを自動生成しました`);
+      }, 1000);
     } catch (error) {
       console.error('Error generating shifts:', error);
+      setIsGenerating(false);
+      setProgress(0);
+      setProgressMessage('');
       alert('シフトの自動生成に失敗しました');
     }
   };
@@ -216,10 +242,18 @@ export default function StandardShiftNew({ currentUser, staff, onUpdate }: Stand
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800">スタッフ標準シフト設定</h2>
           <div className="flex gap-3">
-            <button onClick={handleGenerateShifts} className="btn btn-secondary">
-              今月のシフトを自動生成
+            <button
+              onClick={handleGenerateShifts}
+              className="btn btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isGenerating}
+            >
+              {isGenerating ? '生成中...' : '今月のシフトを自動生成'}
             </button>
-            <button onClick={() => setShowModal(true)} className="btn btn-primary">
+            <button
+              onClick={() => setShowModal(true)}
+              className="btn btn-primary"
+              disabled={isGenerating}
+            >
               + 標準設定を追加
             </button>
           </div>
@@ -228,6 +262,22 @@ export default function StandardShiftNew({ currentUser, staff, onUpdate }: Stand
         <p className="text-sm text-gray-600 mb-4">
           各スタッフの1日の勤務時間と週の勤務日数を設定します
         </p>
+
+        {/* プログレスバー */}
+        {isGenerating && (
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-blue-800">{progressMessage}</span>
+              <span className="text-sm font-bold text-blue-800">{Math.round(progress)}%</span>
+            </div>
+            <div className="w-full bg-blue-200 rounded-full h-3 overflow-hidden">
+              <div
+                className="bg-blue-600 h-3 rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
+          </div>
+        )}
 
         {schedules.length === 0 ? (
           <p className="text-gray-500 text-center py-8">

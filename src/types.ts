@@ -22,6 +22,12 @@ export interface Staff {
   trustScore: number; // 信頼度スコア（0-100）
   role: UserRole;
   isActive: boolean;
+  loginId: string; // ログインID（後方互換性のため保持、emailと同じ値）
+  passwordHash: string; // パスワード（ハッシュ化）
+  email: string; // メールアドレス（ログインIDとして使用）
+  is2faEnabled: boolean; // 二段階認証が有効かどうか
+  otpSecret?: string; // ワンタイムパスワード
+  otpExpiresAt?: string; // OTPの有効期限
 }
 
 // シフト時間帯

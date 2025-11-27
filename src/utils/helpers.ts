@@ -13,10 +13,11 @@ export function formatDate(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-// 日付の表示用フォーマット（YYYY年MM月DD日）
+// 日付の表示用フォーマット（YYYY年MM月DD日（曜日））
 export function formatDateJP(date: string): string {
   const [year, month, day] = date.split('-');
-  return `${year}年${parseInt(month)}月${parseInt(day)}日`;
+  const dayOfWeek = getDayOfWeek(date);
+  return `${year}年${parseInt(month)}月${parseInt(day)}日（${dayOfWeek}）`;
 }
 
 // 曜日を取得

@@ -11,13 +11,14 @@ import ShiftCompletion from './components/ShiftCompletion';
 import PositionManagement from './components/PositionManagement';
 import ReservationReview from './components/ReservationReview';
 import Login from './components/Login';
+import AccountSettings from './components/AccountSettings';
 
 function App() {
   const [currentUser, setCurrentUser] = useState<Staff | null>(null);
   // localStorageから前回のタブを復元（なければ'today'）
-  const [activeTab, setActiveTab] = useState<'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions'>(() => {
+  const [activeTab, setActiveTab] = useState<'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions' | 'account'>(() => {
     const savedTab = localStorage.getItem('activeTab');
-    return (savedTab as 'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions') || 'today';
+    return (savedTab as 'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions' | 'account') || 'today';
   });
   const [staff, setStaff] = useState<Staff[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
@@ -75,7 +76,7 @@ function App() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-800 mb-1">旅館シフト管理</h1>
-              <p className="text-gray-600">{formatDateJP(getToday())} ({getDayOfWeek(getToday())})</p>
+              <p className="text-gray-600">{formatDateJP(getToday())}</p>
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
@@ -83,6 +84,12 @@ function App() {
                 <p className="font-semibold text-gray-800">{currentUser.name}</p>
                 <p className="text-xs text-gray-500">{currentUser.position}</p>
               </div>
+              <button
+                onClick={() => setActiveTab('account')}
+                className="btn btn-secondary text-sm"
+              >
+                アカウント設定
+              </button>
               <button
                 onClick={handleLogout}
                 className="btn btn-secondary text-sm"
@@ -250,6 +257,20 @@ function App() {
               currentUser={currentUser}
               positions={positions}
               onUpdate={loadData}
+            />
+          )}
+          {activeTab === 'account' && (
+            <AccountSettings
+              currentUser={currentUser}
+              onUpdate={async () => {
+                await loadData();
+                // currentUserの情報を再取得
+                const updatedUser = await staffStorage.getById(currentUser.id);
+                if (updatedUser) {
+                  setCurrentUser(updatedUser);
+                  currentUserStorage.set(updatedUser);
+                }
+              }}
             />
           )}
         </div>
