@@ -13,13 +13,14 @@ import ReservationReview from './components/ReservationReview';
 import Login from './components/Login';
 import AccountSettings from './components/AccountSettings';
 import TimeSlotManagement from './components/TimeSlotManagement';
+import StaffSettings from './components/StaffSettings';
 
 function App() {
   const [currentUser, setCurrentUser] = useState<Staff | null>(null);
   // localStorageから前回のタブを復元（なければ'today'）
-  const [activeTab, setActiveTab] = useState<'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions' | 'account' | 'timeslots'>(() => {
+  const [activeTab, setActiveTab] = useState<'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions' | 'account' | 'timeslots' | 'staffsettings'>(() => {
     const savedTab = localStorage.getItem('activeTab');
-    return (savedTab as 'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions' | 'account' | 'timeslots') || 'today';
+    return (savedTab as 'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions' | 'account' | 'timeslots' | 'staffsettings') || 'today';
   });
   const [staff, setStaff] = useState<Staff[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
@@ -208,6 +209,16 @@ function App() {
                 時間帯設定
               </button>
             )}
+            <button
+              onClick={() => setActiveTab('staffsettings')}
+              className={`flex-1 px-6 py-4 font-medium transition-colors ${
+                activeTab === 'staffsettings'
+                  ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+              }`}
+            >
+              スタッフ設定
+            </button>
           </div>
         </div>
 
@@ -288,6 +299,12 @@ function App() {
           )}
           {activeTab === 'timeslots' && currentUser.role === 'admin' && (
             <TimeSlotManagement />
+          )}
+          {activeTab === 'staffsettings' && (
+            <StaffSettings
+              currentUser={currentUser}
+              staff={staff}
+            />
           )}
         </div>
       </div>
