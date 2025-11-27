@@ -1,13 +1,18 @@
 import { useState } from 'react';
 import type { Staff } from '../types';
 import { staffStorage } from '../utils/supabaseStorage';
+import StaffAvailabilitySettings from './StaffAvailabilitySettings';
+import UnavailableDateRequest from './UnavailableDateRequest';
 
 interface AccountSettingsProps {
   currentUser: Staff;
   onUpdate: () => void;
 }
 
+type AccountTab = 'basic' | 'availability' | 'requests';
+
 export default function AccountSettings({ currentUser, onUpdate }: AccountSettingsProps) {
+  const [activeTab, setActiveTab] = useState<AccountTab>('basic');
   const [email, setEmail] = useState(currentUser.email);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -119,8 +124,45 @@ export default function AccountSettings({ currentUser, onUpdate }: AccountSettin
 
   return (
     <div className="space-y-6">
+      {/* タブナビゲーション */}
+      <div className="bg-white rounded-lg shadow-md border border-gray-200">
+        <div className="flex border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab('basic')}
+            className={`flex-1 px-6 py-3 font-medium transition-colors ${
+              activeTab === 'basic'
+                ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+            }`}
+          >
+            基本設定
+          </button>
+          <button
+            onClick={() => setActiveTab('availability')}
+            className={`flex-1 px-6 py-3 font-medium transition-colors ${
+              activeTab === 'availability'
+                ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+            }`}
+          >
+            勤務可能時間
+          </button>
+          <button
+            onClick={() => setActiveTab('requests')}
+            className={`flex-1 px-6 py-3 font-medium transition-colors ${
+              activeTab === 'requests'
+                ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+            }`}
+          >
+            希望休申請
+          </button>
+        </div>
+      </div>
+
+      {activeTab === 'basic' && (
       <div className="card">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">アカウント設定</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-6">基本設定</h2>
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
@@ -278,6 +320,19 @@ export default function AccountSettings({ currentUser, onUpdate }: AccountSettin
           )}
         </div>
       </div>
+      )}
+
+      {activeTab === 'availability' && (
+        <StaffAvailabilitySettings
+          currentUser={currentUser}
+          staff={[currentUser]}
+          isAdminView={false}
+        />
+      )}
+
+      {activeTab === 'requests' && (
+        <UnavailableDateRequest currentUser={currentUser} />
+      )}
     </div>
   );
 }

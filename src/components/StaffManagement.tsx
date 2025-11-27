@@ -3,6 +3,7 @@ import type { Staff, Position } from '../types';
 import { staffStorage, positionStorage } from '../utils/supabaseStorage';
 import { generateId, getTrustScoreColor } from '../utils/helpers';
 import { parseStaffCSV, convertToStaff, generateStaffSampleCSV } from '../utils/csvParser';
+import StaffDetailView from './StaffDetailView';
 
 interface StaffManagementProps {
   staff: Staff[];
@@ -22,6 +23,7 @@ export default function StaffManagement({ staff, onUpdate }: StaffManagementProp
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
+  const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const [importError, setImportError] = useState<string>('');
   const [importPreview, setImportPreview] = useState<Staff[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -180,7 +182,14 @@ export default function StaffManagement({ staff, onUpdate }: StaffManagementProp
             <tbody>
               {sortedStaff.map((staffMember) => (
                 <tr key={staffMember.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-3 px-4 font-medium text-gray-800">{staffMember.name}</td>
+                  <td className="py-3 px-4">
+                    <button
+                      onClick={() => setSelectedStaff(staffMember)}
+                      className="font-medium text-primary-600 hover:text-primary-800 hover:underline"
+                    >
+                      {staffMember.name}
+                    </button>
+                  </td>
                   <td className="py-3 px-4">
                     <span className="badge bg-blue-100 text-blue-800 border-blue-300">
                       {staffMember.position}
@@ -439,6 +448,18 @@ export default function StaffManagement({ staff, onUpdate }: StaffManagementProp
             </div>
           </div>
         </div>
+      )}
+
+      {selectedStaff && (
+        <StaffDetailView
+          selectedStaff={selectedStaff}
+          allStaff={staff}
+          onClose={() => setSelectedStaff(null)}
+          onUpdate={() => {
+            onUpdate();
+            setSelectedStaff(null);
+          }}
+        />
       )}
     </div>
   );
