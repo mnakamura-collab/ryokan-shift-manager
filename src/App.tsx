@@ -14,14 +14,16 @@ import Login from './components/Login';
 import AccountSettings from './components/AccountSettings';
 import TimeSlotManagement from './components/TimeSlotManagement';
 import UnavailableDateApproval from './components/UnavailableDateApproval';
+import DailyStaffRequirementSettings from './components/DailyStaffRequirementSettings';
+import DailyOccupancyManagement from './components/DailyOccupancyManagement';
 
 function App() {
   const [currentUser, setCurrentUser] = useState<Staff | null>(null);
   // localStorageから前回のタブを復元（なければ'today'）
-  const [activeTab, setActiveTab] = useState<'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions' | 'account' | 'timeslots' | 'approval'>(() => {
+  const [activeTab, setActiveTab] = useState<'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions' | 'account' | 'timeslots' | 'requirements' | 'occupancy' | 'approval'>(() => {
     const savedTab = localStorage.getItem('activeTab');
-    const validTabs = ['today', 'calendar', 'standard', 'reservation', 'review', 'completion', 'staff', 'positions', 'account', 'timeslots', 'approval'];
-    return validTabs.includes(savedTab || '') ? (savedTab as 'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions' | 'account' | 'timeslots' | 'approval') : 'today';
+    const validTabs = ['today', 'calendar', 'standard', 'reservation', 'review', 'completion', 'staff', 'positions', 'account', 'timeslots', 'requirements', 'occupancy', 'approval'];
+    return validTabs.includes(savedTab || '') ? (savedTab as 'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions' | 'account' | 'timeslots' | 'requirements' | 'occupancy' | 'approval') : 'today';
   });
   const [staff, setStaff] = useState<Staff[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
@@ -212,6 +214,30 @@ function App() {
             )}
             {currentUser.role === 'admin' && (
               <button
+                onClick={() => setActiveTab('requirements')}
+                className={`flex-1 px-6 py-4 font-medium transition-colors ${
+                  activeTab === 'requirements'
+                    ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                }`}
+              >
+                必要人数設定
+              </button>
+            )}
+            {currentUser.role === 'admin' && (
+              <button
+                onClick={() => setActiveTab('occupancy')}
+                className={`flex-1 px-6 py-4 font-medium transition-colors ${
+                  activeTab === 'occupancy'
+                    ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                }`}
+              >
+                稼働状況管理
+              </button>
+            )}
+            {currentUser.role === 'admin' && (
+              <button
                 onClick={() => setActiveTab('approval')}
                 className={`flex-1 px-6 py-4 font-medium transition-colors ${
                   activeTab === 'approval'
@@ -302,6 +328,12 @@ function App() {
           )}
           {activeTab === 'timeslots' && currentUser.role === 'admin' && (
             <TimeSlotManagement />
+          )}
+          {activeTab === 'requirements' && currentUser.role === 'admin' && (
+            <DailyStaffRequirementSettings selectedDate={getToday()} />
+          )}
+          {activeTab === 'occupancy' && currentUser.role === 'admin' && (
+            <DailyOccupancyManagement />
           )}
           {activeTab === 'approval' && currentUser.role === 'admin' && (
             <UnavailableDateApproval staff={staff} />
