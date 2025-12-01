@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { DailyOccupancy } from '../types';
 import { dailyOccupancyStorage } from '../utils/autoShiftStorage';
-import { getToday } from '../utils/helpers';
+import { getToday, formatDateJP } from '../utils/helpers';
+import { parseOccupancyCSV, convertToOccupancy, generateOccupancySampleCSV } from '../utils/csvParser';
 
 export default function DailyOccupancyManagement() {
   const [selectedDate, setSelectedDate] = useState(getToday());
@@ -16,6 +17,10 @@ export default function DailyOccupancyManagement() {
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importError, setImportError] = useState<string>('');
+  const [importPreview, setImportPreview] = useState<DailyOccupancy[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadOccupancy();
@@ -90,6 +95,57 @@ export default function DailyOccupancyManagement() {
     });
   };
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      try {
+        const csvOccupancies = parseOccupancyCSV(text);
+        const newOccupancies = convertToOccupancy(csvOccupancies, occupancy.totalRooms);
+        setImportPreview(newOccupancies);
+        setImportError('');
+      } catch (error) {
+        setImportError(error instanceof Error ? error.message : 'CSVの解析に失敗しました');
+        setImportPreview([]);
+      }
+    };
+    reader.readAsText(file, 'UTF-8');
+  };
+
+  const handleImport = async () => {
+    if (importPreview.length === 0) return;
+
+    setSaving(true);
+    try {
+      for (const occ of importPreview) {
+        await dailyOccupancyStorage.upsert(occ);
+      }
+
+      alert(`${importPreview.length}件の稼働状況をインポートしました`);
+      setShowImportModal(false);
+      setImportPreview([]);
+      setImportError('');
+      await loadOccupancy();
+    } catch (error) {
+      console.error('Error importing occupancies:', error);
+      alert('インポートに失敗しました');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDownloadSample = () => {
+    const csv = generateOccupancySampleCSV();
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = '稼働状況サンプル.csv';
+    link.click();
+  };
+
   if (loading) {
     return (
       <div className="card">
@@ -100,7 +156,15 @@ export default function DailyOccupancyManagement() {
 
   return (
     <div className="card">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">日別稼働状況管理</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-800">日別稼働状況管理</h2>
+        <button
+          onClick={() => setShowImportModal(true)}
+          className="btn btn-secondary"
+        >
+          CSVインポート
+        </button>
+      </div>
 
       {/* 日付選択 */}
       <div className="mb-6">
@@ -259,6 +323,140 @@ export default function DailyOccupancyManagement() {
           {saving ? '保存中...' : '保存'}
         </button>
       </div>
+
+      {/* CSVインポートモーダル */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-gray-800">稼働状況CSVインポート</h3>
+                <button
+                  onClick={() => {
+                    setShowImportModal(false);
+                    setImportPreview([]);
+                    setImportError('');
+                  }}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* ファイル選択 */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  CSVファイルを選択
+                </label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileChange}
+                  className="block w-full text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-primary-50 file:text-primary-700
+                    hover:file:bg-primary-100"
+                />
+                <p className="mt-2 text-sm text-gray-500">
+                  予約管理システムからエクスポートしたCSVファイルを選択してください
+                </p>
+              </div>
+
+              {/* サンプルダウンロード */}
+              <div className="mb-6">
+                <button
+                  onClick={handleDownloadSample}
+                  className="btn btn-secondary text-sm"
+                >
+                  サンプルCSVをダウンロード
+                </button>
+              </div>
+
+              {/* エラー表示 */}
+              {importError && (
+                <div className="bg-red-50 border border-red-200 rounded p-4 mb-6">
+                  <p className="text-sm text-red-800">{importError}</p>
+                </div>
+              )}
+
+              {/* プレビュー */}
+              {importPreview.length > 0 && (
+                <>
+                  <div className="bg-green-50 border border-green-200 rounded p-4 mb-4">
+                    <p className="text-sm text-green-800 font-semibold">
+                      {importPreview.length}件の稼働状況データが見つかりました
+                    </p>
+                  </div>
+
+                  <div className="mb-6">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3">プレビュー</h4>
+                    <div className="overflow-x-auto max-h-96 overflow-y-auto border rounded">
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-100 sticky top-0">
+                          <tr>
+                            <th className="px-4 py-2 text-left font-semibold text-gray-700">日付</th>
+                            <th className="px-4 py-2 text-right font-semibold text-gray-700">稼働客室数</th>
+                            <th className="px-4 py-2 text-right font-semibold text-gray-700">宿泊人数</th>
+                            <th className="px-4 py-2 text-right font-semibold text-gray-700">稼働率</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {importPreview.map((occ, index) => (
+                            <tr key={index} className="border-t hover:bg-gray-50">
+                              <td className="px-4 py-2">{formatDateJP(occ.date)}</td>
+                              <td className="px-4 py-2 text-right">{occ.occupiedRooms}室</td>
+                              <td className="px-4 py-2 text-right text-gray-600">
+                                {/* guestCountを表示（convertToOccupancyで追加する必要あり） */}
+                                -
+                              </td>
+                              <td className="px-4 py-2 text-right font-medium">
+                                {occ.roomOccupancyRate.toFixed(1)}%
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded p-4 mb-6">
+                    <h4 className="font-semibold text-blue-900 mb-2 text-sm">インポート時の注意</h4>
+                    <ul className="text-sm text-blue-800 space-y-1">
+                      <li>• 同じ日付のデータが既に存在する場合は上書きされます</li>
+                      <li>• 総客室数は現在の設定値（{occupancy.totalRooms}室）が使用されます</li>
+                      <li>• 宴会情報は手動で設定する必要があります</li>
+                    </ul>
+                  </div>
+
+                  {/* アクションボタン */}
+                  <div className="flex justify-end gap-3">
+                    <button
+                      onClick={() => {
+                        setShowImportModal(false);
+                        setImportPreview([]);
+                        setImportError('');
+                      }}
+                      className="btn btn-secondary"
+                    >
+                      キャンセル
+                    </button>
+                    <button
+                      onClick={handleImport}
+                      disabled={saving}
+                      className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {saving ? 'インポート中...' : `${importPreview.length}件をインポート`}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

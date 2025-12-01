@@ -272,3 +272,151 @@ export function generateStaffSampleCSV(): string {
 
   return [headers.join(','), ...sampleData.map((row) => row.join(','))].join('\n');
 }
+
+// 稼働状況CSVインターフェース
+export interface CSVOccupancy {
+  date: string;
+  occupiedRooms: number;
+  guestCount: number;
+}
+
+// CSVを解析（RFC 4180準拠：ダブルクォートで囲まれた値内の改行やカンマを処理）
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        // エスケープされたダブルクォート
+        current += '"';
+        i++;
+      } else {
+        // クォートの開始/終了
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      // カンマで区切る（クォート外の場合のみ）
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+
+  result.push(current.trim());
+  return result;
+}
+
+// 稼働状況CSVをパース（予約管理システムのエクスポート形式に対応）
+export function parseOccupancyCSV(csvText: string): CSVOccupancy[] {
+  // BOMを除去
+  const cleanText = csvText.replace(/^\uFEFF/, '');
+  const lines = cleanText.split('\n');
+
+  if (lines.length === 0) {
+    throw new Error('CSVファイルが空です');
+  }
+
+  // ヘッダー行を解析
+  const headers = parseCSVLine(lines[0]).map((h) => h.trim());
+
+  // 必須カラムのチェック
+  const requiredColumns = ['客室日付', '客室人数'];
+  const missingColumns = requiredColumns.filter((col) => !headers.includes(col));
+
+  if (missingColumns.length > 0) {
+    throw new Error('必須カラムが不足しています: ' + missingColumns.join(', ') + '\n（予約管理システムからエクスポートしたCSVファイルを使用してください）');
+  }
+
+  // 日付ごとのデータを集計
+  const dateMap = new Map<string, { roomCount: number; guestTotal: number }>();
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    try {
+      const values = parseCSVLine(line);
+
+      const row: Record<string, string> = {};
+      headers.forEach((header, index) => {
+        row[header] = values[index] || '';
+      });
+
+      // 客室日付の取得
+      const dateStr = row['客室日付']?.trim();
+      if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        // 日付がない行はスキップ（予約だけで部屋割りされていない行など）
+        continue;
+      }
+
+      // 客室人数の取得
+      const guestCount = parseInt(row['客室人数']);
+      if (isNaN(guestCount) || guestCount < 0) {
+        // 人数がない行もスキップ
+        continue;
+      }
+
+      // 日付ごとに集計
+      if (!dateMap.has(dateStr)) {
+        dateMap.set(dateStr, { roomCount: 0, guestTotal: 0 });
+      }
+
+      const data = dateMap.get(dateStr)!;
+      data.roomCount += 1; // 1行 = 1部屋
+      data.guestTotal += guestCount;
+    } catch (error) {
+      console.warn('行 ' + (i + 1) + ': 解析エラー（スキップ）', error);
+      continue;
+    }
+  }
+
+  // Map を配列に変換
+  const occupancies: CSVOccupancy[] = [];
+  dateMap.forEach((data, date) => {
+    occupancies.push({
+      date,
+      occupiedRooms: data.roomCount,
+      guestCount: data.guestTotal,
+    });
+  });
+
+  // 日付順にソート
+  occupancies.sort((a, b) => a.date.localeCompare(b.date));
+
+  return occupancies;
+}
+
+// CSVOccupancyをDailyOccupancyに変換
+export function convertToOccupancy(csvOccupancies: CSVOccupancy[], totalRooms: number = 50): any[] {
+  return csvOccupancies.map((csv) => {
+    const rate = totalRooms > 0 ? (csv.occupiedRooms / totalRooms) * 100 : 0;
+    return {
+      id: generateId(),
+      date: csv.date,
+      roomOccupancyRate: Math.round(rate * 10) / 10,
+      totalRooms,
+      occupiedRooms: csv.occupiedRooms,
+      hasBanquet: false,
+      banquetGuestCount: 0,
+    };
+  });
+}
+
+// サンプルCSV（稼働状況）を生成
+export function generateOccupancySampleCSV(): string {
+  const headers = ['宿泊者名', '到着予定日', '到着予定時刻', '泊数', 'プラン名', 'チャネル名', 'フロントメモ', '清掃メモ', '食事メモ', '客室日付', '客室タイプ', '部屋番号', '客室人数', '大人男性人数', '大人女性人数', '子供A人数', '子供B人数', '子供C人数', '子供D人数', '子供その他人数'];
+  const sampleData = [
+    ['山田太郎', '2025-12-01', '15:00', '1', 'スタンダードプラン', '電話', '', '', '', '2025-12-01', '和室（バス・トイレ付）', '101', '2', '1', '1', '0', '0', '0', '0', '0'],
+    ['佐藤花子', '2025-12-01', '16:00', '1', 'デラックスプラン', '楽天トラベル', '', '', '', '2025-12-01', '洋室（バス・トイレ付）', '201', '2', '0', '2', '0', '0', '0', '0', '0'],
+    ['鈴木一郎', '2025-12-01', '15:30', '2', 'プレミアムプラン', 'じゃらん', '', '', '', '2025-12-01', '和室（バス・トイレ付）', '102', '4', '2', '2', '0', '0', '0', '0', '0'],
+    ['山田太郎', '2025-12-02', '15:00', '1', 'スタンダードプラン', '電話', '', '', '', '2025-12-02', '和室（バス・トイレ付）', '101', '2', '1', '1', '0', '0', '0', '0', '0'],
+    ['田中美咲', '2025-12-02', '14:00', '1', 'VIPプラン', '電話', '', '', '', '2025-12-02', '特別室', '301', '3', '2', '1', '0', '0', '0', '0', '0'],
+  ];
+
+  return [headers.join(','), ...sampleData.map((row) => row.join(','))].join('\n');
+}
