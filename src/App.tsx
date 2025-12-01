@@ -4,29 +4,22 @@ import { setupInitialData, staffStorage, shiftStorage, reservationStorage, curre
 import { getToday, formatDateJP } from './utils/helpers';
 import TodayShift from './components/TodayShift';
 import ShiftCalendar from './components/ShiftCalendar';
-import StaffManagement from './components/StaffManagement';
-import StandardShiftNew from './components/StandardShiftNew';
-import ReservationManagement from './components/ReservationManagement';
 import ShiftCompletion from './components/ShiftCompletion';
-import PositionManagement from './components/PositionManagement';
-import ReservationReview from './components/ReservationReview';
 import Login from './components/Login';
 import AccountSettings from './components/AccountSettings';
-import TimeSlotManagement from './components/TimeSlotManagement';
 import UnavailableDateApproval from './components/UnavailableDateApproval';
-import DailyStaffRequirementSettings from './components/DailyStaffRequirementSettings';
-import DailyOccupancyManagement from './components/DailyOccupancyManagement';
 import AutoShiftGenerator from './components/AutoShiftGenerator';
-import BuildingManagement from './components/BuildingManagement';
-import RoomManagement from './components/RoomManagement';
+import MasterManagement from './components/MasterManagement';
+import ShiftSettings from './components/ShiftSettings';
+import ReservationOccupancyManagement from './components/ReservationOccupancyManagement';
 
 function App() {
   const [currentUser, setCurrentUser] = useState<Staff | null>(null);
   // localStorageから前回のタブを復元（なければ'today'）
-  const [activeTab, setActiveTab] = useState<'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions' | 'account' | 'timeslots' | 'requirements' | 'occupancy' | 'autoshift' | 'approval' | 'buildings' | 'rooms'>(() => {
+  const [activeTab, setActiveTab] = useState<'today' | 'calendar' | 'autoshift' | 'completion' | 'approval' | 'master' | 'shiftsettings' | 'reservation' | 'account'>(() => {
     const savedTab = localStorage.getItem('activeTab');
-    const validTabs = ['today', 'calendar', 'standard', 'reservation', 'review', 'completion', 'staff', 'positions', 'account', 'timeslots', 'requirements', 'occupancy', 'autoshift', 'approval', 'buildings', 'rooms'];
-    return validTabs.includes(savedTab || '') ? (savedTab as 'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions' | 'account' | 'timeslots' | 'requirements' | 'occupancy' | 'autoshift' | 'approval' | 'buildings' | 'rooms') : 'today';
+    const validTabs = ['today', 'calendar', 'autoshift', 'completion', 'approval', 'master', 'shiftsettings', 'reservation', 'account'];
+    return validTabs.includes(savedTab || '') ? (savedTab as 'today' | 'calendar' | 'autoshift' | 'completion' | 'approval' | 'master' | 'shiftsettings' | 'reservation' | 'account') : 'today';
   });
   const [staff, setStaff] = useState<Staff[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
@@ -132,160 +125,68 @@ function App() {
               カレンダー
             </button>
             {currentUser.role === 'admin' && (
-              <button
-                onClick={() => setActiveTab('standard')}
-                className={`flex-1 px-6 py-4 font-medium transition-colors ${
-                  activeTab === 'standard'
-                    ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                }`}
-              >
-                標準シフト
-              </button>
-            )}
-            {currentUser.role === 'admin' && (
-              <button
-                onClick={() => setActiveTab('reservation')}
-                className={`flex-1 px-6 py-4 font-medium transition-colors ${
-                  activeTab === 'reservation'
-                    ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                }`}
-              >
-                予約管理
-              </button>
-            )}
-            {currentUser.role === 'admin' && (
-              <button
-                onClick={() => setActiveTab('review')}
-                className={`flex-1 px-6 py-4 font-medium transition-colors ${
-                  activeTab === 'review'
-                    ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                }`}
-              >
-                予約レビュー
-              </button>
-            )}
-            {currentUser.role === 'admin' && (
-              <button
-                onClick={() => setActiveTab('completion')}
-                className={`flex-1 px-6 py-4 font-medium transition-colors ${
-                  activeTab === 'completion'
-                    ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                }`}
-              >
-                シフト完了
-              </button>
-            )}
-            {currentUser.role === 'admin' && (
-              <button
-                onClick={() => setActiveTab('staff')}
-                className={`flex-1 px-6 py-4 font-medium transition-colors ${
-                  activeTab === 'staff'
-                    ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                }`}
-              >
-                スタッフ管理
-              </button>
-            )}
-            {currentUser.role === 'admin' && (
-              <button
-                onClick={() => setActiveTab('positions')}
-                className={`flex-1 px-6 py-4 font-medium transition-colors ${
-                  activeTab === 'positions'
-                    ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                }`}
-              >
-                役職管理
-              </button>
-            )}
-            {currentUser.role === 'admin' && (
-              <button
-                onClick={() => setActiveTab('buildings')}
-                className={`flex-1 px-6 py-4 font-medium transition-colors ${
-                  activeTab === 'buildings'
-                    ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                }`}
-              >
-                館マスタ
-              </button>
-            )}
-            {currentUser.role === 'admin' && (
-              <button
-                onClick={() => setActiveTab('rooms')}
-                className={`flex-1 px-6 py-4 font-medium transition-colors ${
-                  activeTab === 'rooms'
-                    ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                }`}
-              >
-                客室マスタ
-              </button>
-            )}
-            {currentUser.role === 'admin' && (
-              <button
-                onClick={() => setActiveTab('timeslots')}
-                className={`flex-1 px-6 py-4 font-medium transition-colors ${
-                  activeTab === 'timeslots'
-                    ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                }`}
-              >
-                時間帯設定
-              </button>
-            )}
-            {currentUser.role === 'admin' && (
-              <button
-                onClick={() => setActiveTab('requirements')}
-                className={`flex-1 px-6 py-4 font-medium transition-colors ${
-                  activeTab === 'requirements'
-                    ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                }`}
-              >
-                必要人数設定
-              </button>
-            )}
-            {currentUser.role === 'admin' && (
-              <button
-                onClick={() => setActiveTab('occupancy')}
-                className={`flex-1 px-6 py-4 font-medium transition-colors ${
-                  activeTab === 'occupancy'
-                    ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                }`}
-              >
-                稼働状況管理
-              </button>
-            )}
-            {currentUser.role === 'admin' && (
-              <button
-                onClick={() => setActiveTab('autoshift')}
-                className={`flex-1 px-6 py-4 font-medium transition-colors ${
-                  activeTab === 'autoshift'
-                    ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                }`}
-              >
-                自動シフト生成
-              </button>
-            )}
-            {currentUser.role === 'admin' && (
-              <button
-                onClick={() => setActiveTab('approval')}
-                className={`flex-1 px-6 py-4 font-medium transition-colors ${
-                  activeTab === 'approval'
-                    ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                }`}
-              >
-                希望休承認
-              </button>
+              <>
+                <button
+                  onClick={() => setActiveTab('autoshift')}
+                  className={`flex-1 px-6 py-4 font-medium transition-colors ${
+                    activeTab === 'autoshift'
+                      ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                  }`}
+                >
+                  自動シフト生成
+                </button>
+                <button
+                  onClick={() => setActiveTab('completion')}
+                  className={`flex-1 px-6 py-4 font-medium transition-colors ${
+                    activeTab === 'completion'
+                      ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                  }`}
+                >
+                  シフト完了
+                </button>
+                <button
+                  onClick={() => setActiveTab('approval')}
+                  className={`flex-1 px-6 py-4 font-medium transition-colors ${
+                    activeTab === 'approval'
+                      ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                  }`}
+                >
+                  希望休承認
+                </button>
+                <button
+                  onClick={() => setActiveTab('master')}
+                  className={`flex-1 px-6 py-4 font-medium transition-colors ${
+                    activeTab === 'master'
+                      ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                  }`}
+                >
+                  マスタ管理
+                </button>
+                <button
+                  onClick={() => setActiveTab('shiftsettings')}
+                  className={`flex-1 px-6 py-4 font-medium transition-colors ${
+                    activeTab === 'shiftsettings'
+                      ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                  }`}
+                >
+                  シフト設定
+                </button>
+                <button
+                  onClick={() => setActiveTab('reservation')}
+                  className={`flex-1 px-6 py-4 font-medium transition-colors ${
+                    activeTab === 'reservation'
+                      ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                  }`}
+                >
+                  予約・稼働管理
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -309,26 +210,8 @@ function App() {
               onUpdate={loadData}
             />
           )}
-          {activeTab === 'standard' && currentUser.role === 'admin' && (
-            <StandardShiftNew
-              currentUser={currentUser}
-              staff={staff}
-              onUpdate={loadData}
-            />
-          )}
-          {activeTab === 'reservation' && currentUser.role === 'admin' && (
-            <ReservationManagement
-              currentUser={currentUser}
-              reservations={reservations}
-              onUpdate={loadData}
-            />
-          )}
-          {activeTab === 'review' && currentUser.role === 'admin' && (
-            <ReservationReview
-              currentUser={currentUser}
-              reservations={reservations}
-              onUpdate={loadData}
-            />
+          {activeTab === 'autoshift' && currentUser.role === 'admin' && (
+            <AutoShiftGenerator currentUser={currentUser} />
           )}
           {activeTab === 'completion' && currentUser.role === 'admin' && (
             <ShiftCompletion
@@ -338,24 +221,30 @@ function App() {
               onUpdate={loadData}
             />
           )}
-          {activeTab === 'staff' && currentUser.role === 'admin' && (
-            <StaffManagement
-              staff={staff}
-              onUpdate={loadData}
-            />
+          {activeTab === 'approval' && currentUser.role === 'admin' && (
+            <UnavailableDateApproval staff={staff} />
           )}
-          {activeTab === 'positions' && currentUser.role === 'admin' && (
-            <PositionManagement
+          {activeTab === 'master' && currentUser.role === 'admin' && (
+            <MasterManagement
               currentUser={currentUser}
+              staff={staff}
               positions={positions}
               onUpdate={loadData}
             />
           )}
-          {activeTab === 'buildings' && currentUser.role === 'admin' && (
-            <BuildingManagement />
+          {activeTab === 'shiftsettings' && currentUser.role === 'admin' && (
+            <ShiftSettings
+              currentUser={currentUser}
+              staff={staff}
+              onUpdate={loadData}
+            />
           )}
-          {activeTab === 'rooms' && currentUser.role === 'admin' && (
-            <RoomManagement />
+          {activeTab === 'reservation' && currentUser.role === 'admin' && (
+            <ReservationOccupancyManagement
+              currentUser={currentUser}
+              reservations={reservations}
+              onUpdate={loadData}
+            />
           )}
           {activeTab === 'account' && (
             <AccountSettings
@@ -370,21 +259,6 @@ function App() {
                 }
               }}
             />
-          )}
-          {activeTab === 'timeslots' && currentUser.role === 'admin' && (
-            <TimeSlotManagement />
-          )}
-          {activeTab === 'requirements' && currentUser.role === 'admin' && (
-            <DailyStaffRequirementSettings selectedDate={getToday()} />
-          )}
-          {activeTab === 'occupancy' && currentUser.role === 'admin' && (
-            <DailyOccupancyManagement />
-          )}
-          {activeTab === 'autoshift' && currentUser.role === 'admin' && (
-            <AutoShiftGenerator currentUser={currentUser} />
-          )}
-          {activeTab === 'approval' && currentUser.role === 'admin' && (
-            <UnavailableDateApproval staff={staff} />
           )}
         </div>
       </div>
