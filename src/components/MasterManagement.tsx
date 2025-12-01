@@ -1,22 +1,23 @@
 import { useState, useEffect } from 'react';
 import type { Staff, PositionMaster } from '../types';
-import StaffManagement from './StaffManagement';
 import PositionManagement from './PositionManagement';
 import BuildingManagement from './BuildingManagement';
 import RoomManagement from './RoomManagement';
+import TimeSlotManagement from './TimeSlotManagement';
+import DailyStaffRequirementSettings from './DailyStaffRequirementSettings';
+import { getToday } from '../utils/helpers';
 
 interface MasterManagementProps {
   currentUser: Staff;
-  staff: Staff[];
   positions: PositionMaster[];
   onUpdate: () => Promise<void>;
 }
 
-export default function MasterManagement({ currentUser, staff, positions, onUpdate }: MasterManagementProps) {
-  const [activeSubTab, setActiveSubTab] = useState<'staff' | 'positions' | 'buildings' | 'rooms'>(() => {
+export default function MasterManagement({ currentUser, positions, onUpdate }: MasterManagementProps) {
+  const [activeSubTab, setActiveSubTab] = useState<'timeslots' | 'requirements' | 'positions' | 'buildings' | 'rooms'>(() => {
     const savedSubTab = localStorage.getItem('masterManagementSubTab');
-    const validSubTabs = ['staff', 'positions', 'buildings', 'rooms'];
-    return validSubTabs.includes(savedSubTab || '') ? (savedSubTab as 'staff' | 'positions' | 'buildings' | 'rooms') : 'staff';
+    const validSubTabs = ['timeslots', 'requirements', 'positions', 'buildings', 'rooms'];
+    return validSubTabs.includes(savedSubTab || '') ? (savedSubTab as 'timeslots' | 'requirements' | 'positions' | 'buildings' | 'rooms') : 'timeslots';
   });
 
   useEffect(() => {
@@ -27,30 +28,40 @@ export default function MasterManagement({ currentUser, staff, positions, onUpda
     <div>
       {/* サブタブナビゲーション */}
       <div className="bg-white rounded-lg shadow-md mb-6 border border-gray-200">
-        <div className="flex border-b border-gray-200">
+        <div className="flex border-b border-gray-200 overflow-x-auto">
           <button
-            onClick={() => setActiveSubTab('staff')}
-            className={`flex-1 px-6 py-3 font-medium text-sm transition-colors ${
-              activeSubTab === 'staff'
+            onClick={() => setActiveSubTab('timeslots')}
+            className={`flex-1 px-6 py-3 font-medium text-sm transition-colors whitespace-nowrap ${
+              activeSubTab === 'timeslots'
                 ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
                 : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
             }`}
           >
-            スタッフ管理
+            時間帯設定
+          </button>
+          <button
+            onClick={() => setActiveSubTab('requirements')}
+            className={`flex-1 px-6 py-3 font-medium text-sm transition-colors whitespace-nowrap ${
+              activeSubTab === 'requirements'
+                ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+            }`}
+          >
+            必要人数設定
           </button>
           <button
             onClick={() => setActiveSubTab('positions')}
-            className={`flex-1 px-6 py-3 font-medium text-sm transition-colors ${
+            className={`flex-1 px-6 py-3 font-medium text-sm transition-colors whitespace-nowrap ${
               activeSubTab === 'positions'
                 ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
                 : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
             }`}
           >
-            役職管理
+            役職設定
           </button>
           <button
             onClick={() => setActiveSubTab('buildings')}
-            className={`flex-1 px-6 py-3 font-medium text-sm transition-colors ${
+            className={`flex-1 px-6 py-3 font-medium text-sm transition-colors whitespace-nowrap ${
               activeSubTab === 'buildings'
                 ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
                 : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
@@ -60,7 +71,7 @@ export default function MasterManagement({ currentUser, staff, positions, onUpda
           </button>
           <button
             onClick={() => setActiveSubTab('rooms')}
-            className={`flex-1 px-6 py-3 font-medium text-sm transition-colors ${
+            className={`flex-1 px-6 py-3 font-medium text-sm transition-colors whitespace-nowrap ${
               activeSubTab === 'rooms'
                 ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
                 : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
@@ -72,8 +83,11 @@ export default function MasterManagement({ currentUser, staff, positions, onUpda
       </div>
 
       {/* サブタブコンテンツ */}
-      {activeSubTab === 'staff' && (
-        <StaffManagement staff={staff} onUpdate={onUpdate} />
+      {activeSubTab === 'timeslots' && (
+        <TimeSlotManagement />
+      )}
+      {activeSubTab === 'requirements' && (
+        <DailyStaffRequirementSettings selectedDate={getToday()} />
       )}
       {activeSubTab === 'positions' && (
         <PositionManagement currentUser={currentUser} positions={positions} onUpdate={onUpdate} />

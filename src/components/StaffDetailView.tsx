@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { Staff, StaffUnavailableDate } from '../types';
 import StaffAvailabilitySettings from './StaffAvailabilitySettings';
 import StaffWorkLimitSettings from './StaffWorkLimitSettings';
+import StandardShiftNew from './StandardShiftNew';
 import { staffUnavailableDateStorage } from '../utils/autoShiftStorage';
 import { formatDateJP } from '../utils/helpers';
 
@@ -12,7 +13,7 @@ interface StaffDetailViewProps {
   onUpdate: () => void;
 }
 
-type DetailTab = 'basic' | 'availability' | 'worklimit' | 'requests';
+type DetailTab = 'basic' | 'availability' | 'standardshift' | 'worklimit' | 'requests';
 
 export default function StaffDetailView({
   selectedStaff,
@@ -72,10 +73,10 @@ export default function StaffDetailView({
 
         {/* タブナビゲーション */}
         <div className="border-b border-gray-200 bg-gray-50">
-          <div className="flex">
+          <div className="flex overflow-x-auto">
             <button
               onClick={() => setActiveTab('basic')}
-              className={`px-6 py-3 font-medium transition-colors ${
+              className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'basic'
                   ? 'text-primary-600 border-b-2 border-primary-600 bg-white'
                   : 'text-gray-600 hover:text-gray-800'
@@ -85,7 +86,7 @@ export default function StaffDetailView({
             </button>
             <button
               onClick={() => setActiveTab('availability')}
-              className={`px-6 py-3 font-medium transition-colors ${
+              className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'availability'
                   ? 'text-primary-600 border-b-2 border-primary-600 bg-white'
                   : 'text-gray-600 hover:text-gray-800'
@@ -94,8 +95,18 @@ export default function StaffDetailView({
               勤務可能時間
             </button>
             <button
+              onClick={() => setActiveTab('standardshift')}
+              className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
+                activeTab === 'standardshift'
+                  ? 'text-primary-600 border-b-2 border-primary-600 bg-white'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              標準シフト
+            </button>
+            <button
               onClick={() => setActiveTab('worklimit')}
-              className={`px-6 py-3 font-medium transition-colors ${
+              className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'worklimit'
                   ? 'text-primary-600 border-b-2 border-primary-600 bg-white'
                   : 'text-gray-600 hover:text-gray-800'
@@ -105,7 +116,7 @@ export default function StaffDetailView({
             </button>
             <button
               onClick={() => setActiveTab('requests')}
-              className={`px-6 py-3 font-medium transition-colors ${
+              className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'requests'
                   ? 'text-primary-600 border-b-2 border-primary-600 bg-white'
                   : 'text-gray-600 hover:text-gray-800'
@@ -163,6 +174,14 @@ export default function StaffDetailView({
               currentUser={selectedStaff}
               staff={allStaff}
               isAdminView={true}
+            />
+          )}
+
+          {activeTab === 'standardshift' && (
+            <StandardShiftNew
+              currentUser={selectedStaff}
+              staff={allStaff}
+              onUpdate={() => {}}
             />
           )}
 

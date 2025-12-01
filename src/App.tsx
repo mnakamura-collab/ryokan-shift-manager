@@ -10,16 +10,16 @@ import AccountSettings from './components/AccountSettings';
 import UnavailableDateApproval from './components/UnavailableDateApproval';
 import AutoShiftGenerator from './components/AutoShiftGenerator';
 import MasterManagement from './components/MasterManagement';
-import ShiftSettings from './components/ShiftSettings';
+import StaffManagement from './components/StaffManagement';
 import ReservationOccupancyManagement from './components/ReservationOccupancyManagement';
 
 function App() {
   const [currentUser, setCurrentUser] = useState<Staff | null>(null);
   // localStorageから前回のタブを復元（なければ'today'）
-  const [activeTab, setActiveTab] = useState<'today' | 'calendar' | 'autoshift' | 'completion' | 'approval' | 'master' | 'shiftsettings' | 'reservation' | 'account'>(() => {
+  const [activeTab, setActiveTab] = useState<'today' | 'calendar' | 'autoshift' | 'completion' | 'approval' | 'staff' | 'master' | 'reservation' | 'account'>(() => {
     const savedTab = localStorage.getItem('activeTab');
-    const validTabs = ['today', 'calendar', 'autoshift', 'completion', 'approval', 'master', 'shiftsettings', 'reservation', 'account'];
-    return validTabs.includes(savedTab || '') ? (savedTab as 'today' | 'calendar' | 'autoshift' | 'completion' | 'approval' | 'master' | 'shiftsettings' | 'reservation' | 'account') : 'today';
+    const validTabs = ['today', 'calendar', 'autoshift', 'completion', 'approval', 'staff', 'master', 'reservation', 'account'];
+    return validTabs.includes(savedTab || '') ? (savedTab as 'today' | 'calendar' | 'autoshift' | 'completion' | 'approval' | 'staff' | 'master' | 'reservation' | 'account') : 'today';
   });
   const [staff, setStaff] = useState<Staff[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
@@ -157,6 +157,16 @@ function App() {
                   希望休承認
                 </button>
                 <button
+                  onClick={() => setActiveTab('staff')}
+                  className={`flex-1 px-6 py-4 font-medium transition-colors ${
+                    activeTab === 'staff'
+                      ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                  }`}
+                >
+                  スタッフ管理
+                </button>
+                <button
                   onClick={() => setActiveTab('master')}
                   className={`flex-1 px-6 py-4 font-medium transition-colors ${
                     activeTab === 'master'
@@ -165,16 +175,6 @@ function App() {
                   }`}
                 >
                   マスタ管理
-                </button>
-                <button
-                  onClick={() => setActiveTab('shiftsettings')}
-                  className={`flex-1 px-6 py-4 font-medium transition-colors ${
-                    activeTab === 'shiftsettings'
-                      ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
-                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                  }`}
-                >
-                  シフト設定
                 </button>
                 <button
                   onClick={() => setActiveTab('reservation')}
@@ -224,18 +224,16 @@ function App() {
           {activeTab === 'approval' && currentUser.role === 'admin' && (
             <UnavailableDateApproval staff={staff} />
           )}
-          {activeTab === 'master' && currentUser.role === 'admin' && (
-            <MasterManagement
-              currentUser={currentUser}
+          {activeTab === 'staff' && currentUser.role === 'admin' && (
+            <StaffManagement
               staff={staff}
-              positions={positions}
               onUpdate={loadData}
             />
           )}
-          {activeTab === 'shiftsettings' && currentUser.role === 'admin' && (
-            <ShiftSettings
+          {activeTab === 'master' && currentUser.role === 'admin' && (
+            <MasterManagement
               currentUser={currentUser}
-              staff={staff}
+              positions={positions}
               onUpdate={loadData}
             />
           )}
