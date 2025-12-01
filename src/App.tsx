@@ -16,14 +16,15 @@ import TimeSlotManagement from './components/TimeSlotManagement';
 import UnavailableDateApproval from './components/UnavailableDateApproval';
 import DailyStaffRequirementSettings from './components/DailyStaffRequirementSettings';
 import DailyOccupancyManagement from './components/DailyOccupancyManagement';
+import AutoShiftGenerator from './components/AutoShiftGenerator';
 
 function App() {
   const [currentUser, setCurrentUser] = useState<Staff | null>(null);
   // localStorageから前回のタブを復元（なければ'today'）
-  const [activeTab, setActiveTab] = useState<'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions' | 'account' | 'timeslots' | 'requirements' | 'occupancy' | 'approval'>(() => {
+  const [activeTab, setActiveTab] = useState<'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions' | 'account' | 'timeslots' | 'requirements' | 'occupancy' | 'autoshift' | 'approval'>(() => {
     const savedTab = localStorage.getItem('activeTab');
-    const validTabs = ['today', 'calendar', 'standard', 'reservation', 'review', 'completion', 'staff', 'positions', 'account', 'timeslots', 'requirements', 'occupancy', 'approval'];
-    return validTabs.includes(savedTab || '') ? (savedTab as 'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions' | 'account' | 'timeslots' | 'requirements' | 'occupancy' | 'approval') : 'today';
+    const validTabs = ['today', 'calendar', 'standard', 'reservation', 'review', 'completion', 'staff', 'positions', 'account', 'timeslots', 'requirements', 'occupancy', 'autoshift', 'approval'];
+    return validTabs.includes(savedTab || '') ? (savedTab as 'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions' | 'account' | 'timeslots' | 'requirements' | 'occupancy' | 'autoshift' | 'approval') : 'today';
   });
   const [staff, setStaff] = useState<Staff[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
@@ -238,6 +239,18 @@ function App() {
             )}
             {currentUser.role === 'admin' && (
               <button
+                onClick={() => setActiveTab('autoshift')}
+                className={`flex-1 px-6 py-4 font-medium transition-colors ${
+                  activeTab === 'autoshift'
+                    ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                }`}
+              >
+                自動シフト生成
+              </button>
+            )}
+            {currentUser.role === 'admin' && (
+              <button
                 onClick={() => setActiveTab('approval')}
                 className={`flex-1 px-6 py-4 font-medium transition-colors ${
                   activeTab === 'approval'
@@ -334,6 +347,9 @@ function App() {
           )}
           {activeTab === 'occupancy' && currentUser.role === 'admin' && (
             <DailyOccupancyManagement />
+          )}
+          {activeTab === 'autoshift' && currentUser.role === 'admin' && (
+            <AutoShiftGenerator currentUser={currentUser} />
           )}
           {activeTab === 'approval' && currentUser.role === 'admin' && (
             <UnavailableDateApproval staff={staff} />
