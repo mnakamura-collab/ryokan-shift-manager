@@ -17,14 +17,16 @@ import UnavailableDateApproval from './components/UnavailableDateApproval';
 import DailyStaffRequirementSettings from './components/DailyStaffRequirementSettings';
 import DailyOccupancyManagement from './components/DailyOccupancyManagement';
 import AutoShiftGenerator from './components/AutoShiftGenerator';
+import BuildingManagement from './components/BuildingManagement';
+import RoomManagement from './components/RoomManagement';
 
 function App() {
   const [currentUser, setCurrentUser] = useState<Staff | null>(null);
   // localStorageから前回のタブを復元（なければ'today'）
-  const [activeTab, setActiveTab] = useState<'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions' | 'account' | 'timeslots' | 'requirements' | 'occupancy' | 'autoshift' | 'approval'>(() => {
+  const [activeTab, setActiveTab] = useState<'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions' | 'account' | 'timeslots' | 'requirements' | 'occupancy' | 'autoshift' | 'approval' | 'buildings' | 'rooms'>(() => {
     const savedTab = localStorage.getItem('activeTab');
-    const validTabs = ['today', 'calendar', 'standard', 'reservation', 'review', 'completion', 'staff', 'positions', 'account', 'timeslots', 'requirements', 'occupancy', 'autoshift', 'approval'];
-    return validTabs.includes(savedTab || '') ? (savedTab as 'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions' | 'account' | 'timeslots' | 'requirements' | 'occupancy' | 'autoshift' | 'approval') : 'today';
+    const validTabs = ['today', 'calendar', 'standard', 'reservation', 'review', 'completion', 'staff', 'positions', 'account', 'timeslots', 'requirements', 'occupancy', 'autoshift', 'approval', 'buildings', 'rooms'];
+    return validTabs.includes(savedTab || '') ? (savedTab as 'today' | 'calendar' | 'standard' | 'reservation' | 'review' | 'completion' | 'staff' | 'positions' | 'account' | 'timeslots' | 'requirements' | 'occupancy' | 'autoshift' | 'approval' | 'buildings' | 'rooms') : 'today';
   });
   const [staff, setStaff] = useState<Staff[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
@@ -203,6 +205,30 @@ function App() {
             )}
             {currentUser.role === 'admin' && (
               <button
+                onClick={() => setActiveTab('buildings')}
+                className={`flex-1 px-6 py-4 font-medium transition-colors ${
+                  activeTab === 'buildings'
+                    ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                }`}
+              >
+                館マスタ
+              </button>
+            )}
+            {currentUser.role === 'admin' && (
+              <button
+                onClick={() => setActiveTab('rooms')}
+                className={`flex-1 px-6 py-4 font-medium transition-colors ${
+                  activeTab === 'rooms'
+                    ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                }`}
+              >
+                客室マスタ
+              </button>
+            )}
+            {currentUser.role === 'admin' && (
+              <button
                 onClick={() => setActiveTab('timeslots')}
                 className={`flex-1 px-6 py-4 font-medium transition-colors ${
                   activeTab === 'timeslots'
@@ -324,6 +350,12 @@ function App() {
               positions={positions}
               onUpdate={loadData}
             />
+          )}
+          {activeTab === 'buildings' && currentUser.role === 'admin' && (
+            <BuildingManagement />
+          )}
+          {activeTab === 'rooms' && currentUser.role === 'admin' && (
+            <RoomManagement />
           )}
           {activeTab === 'account' && (
             <AccountSettings

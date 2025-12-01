@@ -202,13 +202,34 @@ export interface RequiredStaffAssignment {
   reason?: string;
 }
 
-// 客室・宴会稼働情報
+// 館マスタ
+export interface Building {
+  id: string;
+  name: string;                    // '本館', '新館', '別館', etc.
+  totalRooms: number;              // 総客室数
+  displayOrder: number;
+  isActive: boolean;
+}
+
+// 客室マスタ
+export interface Room {
+  id: string;
+  roomNumber: string;              // 部屋番号 '701', '805', etc.
+  buildingId: string;              // 所属する館ID
+  roomType: string;                // '和室', '洋室', '特別室', etc.
+  hasBath: boolean;                // バスの有無
+  hasToilet: boolean;              // トイレの有無
+  isActive: boolean;
+}
+
+// 客室・宴会稼働情報（館別）
 export interface DailyOccupancy {
   id: string;
   date: string;                    // 'YYYY-MM-DD'
+  buildingId: string;              // 館ID
   roomOccupancyRate: number;       // 0-100 (%)
-  totalRooms: number;
-  occupiedRooms: number;
+  totalRooms: number;              // この館の総客室数
+  occupiedRooms: number;           // この館の稼働客室数
   hasBanquet: boolean;
   banquetGuestCount?: number;
 }

@@ -8,6 +8,8 @@ import type {
   // StaffPriority,
   // RequiredStaffAssignment,
   DailyOccupancy,
+  Building,
+  Room,
 } from '../types';
 
 // ========================================
@@ -356,6 +358,7 @@ export const dailyOccupancyStorage = {
     return data.map(item => ({
       id: item.id,
       date: item.date,
+      buildingId: item.building_id,
       roomOccupancyRate: item.room_occupancy_rate,
       totalRooms: item.total_rooms,
       occupiedRooms: item.occupied_rooms,
@@ -364,11 +367,32 @@ export const dailyOccupancyStorage = {
     }));
   },
 
-  getByDate: async (date: string): Promise<DailyOccupancy | null> => {
+  getByDate: async (date: string): Promise<DailyOccupancy[]> => {
+    const { data, error } = await supabase
+      .from('daily_occupancy')
+      .select('*')
+      .eq('date', date);
+
+    if (error || !data) return [];
+
+    return data.map(item => ({
+      id: item.id,
+      date: item.date,
+      buildingId: item.building_id,
+      roomOccupancyRate: item.room_occupancy_rate,
+      totalRooms: item.total_rooms,
+      occupiedRooms: item.occupied_rooms,
+      hasBanquet: item.has_banquet,
+      banquetGuestCount: item.banquet_guest_count,
+    }));
+  },
+
+  getByDateAndBuilding: async (date: string, buildingId: string): Promise<DailyOccupancy | null> => {
     const { data, error } = await supabase
       .from('daily_occupancy')
       .select('*')
       .eq('date', date)
+      .eq('building_id', buildingId)
       .single();
 
     if (error || !data) return null;
@@ -376,6 +400,7 @@ export const dailyOccupancyStorage = {
     return {
       id: data.id,
       date: data.date,
+      buildingId: data.building_id,
       roomOccupancyRate: data.room_occupancy_rate,
       totalRooms: data.total_rooms,
       occupiedRooms: data.occupied_rooms,
@@ -387,17 +412,252 @@ export const dailyOccupancyStorage = {
   upsert: async (occupancy: Omit<DailyOccupancy, 'id'>): Promise<void> => {
     const { error } = await supabase.from('daily_occupancy').upsert({
       date: occupancy.date,
+      building_id: occupancy.buildingId,
       room_occupancy_rate: occupancy.roomOccupancyRate,
       total_rooms: occupancy.totalRooms,
       occupied_rooms: occupancy.occupiedRooms,
       has_banquet: occupancy.hasBanquet,
       banquet_guest_count: occupancy.banquetGuestCount,
     }, {
-      onConflict: 'date',
+      onConflict: 'date,building_id',
     });
 
     if (error) {
       console.error('Error upserting daily occupancy:', error);
+      throw error;
+    }
+  },
+};
+
+// ========================================
+// 館マスタ
+// ========================================
+export const buildingStorage = {
+  getAll: async (): Promise<Building[]> => {
+    const { data, error } = await supabase
+      .from('buildings')
+      .select('*')
+      .eq('is_active', true)
+      .order('display_order');
+
+    if (error) {
+      console.error('Error fetching buildings:', error);
+      return [];
+    }
+
+    return data.map(item => ({
+      id: item.id,
+      name: item.name,
+      totalRooms: item.total_rooms,
+      displayOrder: item.display_order,
+      isActive: item.is_active,
+    }));
+  },
+
+  getById: async (id: string): Promise<Building | null> => {
+    const { data, error } = await supabase
+      .from('buildings')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      console.error('Error fetching building:', error);
+      return null;
+    }
+
+    return {
+      id: data.id,
+      name: data.name,
+      totalRooms: data.total_rooms,
+      displayOrder: data.display_order,
+      isActive: data.is_active,
+    };
+  },
+
+  add: async (building: Omit<Building, 'id'>): Promise<void> => {
+    const { error } = await supabase.from('buildings').insert({
+      name: building.name,
+      total_rooms: building.totalRooms,
+      display_order: building.displayOrder,
+      is_active: building.isActive,
+    });
+
+    if (error) {
+      console.error('Error adding building:', error);
+      throw error;
+    }
+  },
+
+  update: async (id: string, updates: Partial<Building>): Promise<void> => {
+    const updateData: any = {};
+    if (updates.name !== undefined) updateData.name = updates.name;
+    if (updates.totalRooms !== undefined) updateData.total_rooms = updates.totalRooms;
+    if (updates.displayOrder !== undefined) updateData.display_order = updates.displayOrder;
+    if (updates.isActive !== undefined) updateData.is_active = updates.isActive;
+
+    const { error } = await supabase
+      .from('buildings')
+      .update(updateData)
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating building:', error);
+      throw error;
+    }
+  },
+
+  delete: async (id: string): Promise<void> => {
+    const { error } = await supabase
+      .from('buildings')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting building:', error);
+      throw error;
+    }
+  },
+};
+
+// ========================================
+// 客室マスタ
+// ========================================
+export const roomStorage = {
+  getAll: async (): Promise<Room[]> => {
+    const { data, error } = await supabase
+      .from('rooms')
+      .select('*')
+      .eq('is_active', true)
+      .order('room_number');
+
+    if (error) {
+      console.error('Error fetching rooms:', error);
+      return [];
+    }
+
+    return data.map(item => ({
+      id: item.id,
+      roomNumber: item.room_number,
+      buildingId: item.building_id,
+      roomType: item.room_type,
+      hasBath: item.has_bath,
+      hasToilet: item.has_toilet,
+      isActive: item.is_active,
+    }));
+  },
+
+  getByBuildingId: async (buildingId: string): Promise<Room[]> => {
+    const { data, error } = await supabase
+      .from('rooms')
+      .select('*')
+      .eq('building_id', buildingId)
+      .eq('is_active', true)
+      .order('room_number');
+
+    if (error) {
+      console.error('Error fetching rooms by building:', error);
+      return [];
+    }
+
+    return data.map(item => ({
+      id: item.id,
+      roomNumber: item.room_number,
+      buildingId: item.building_id,
+      roomType: item.room_type,
+      hasBath: item.has_bath,
+      hasToilet: item.has_toilet,
+      isActive: item.is_active,
+    }));
+  },
+
+  getByRoomNumber: async (roomNumber: string): Promise<Room | null> => {
+    const { data, error } = await supabase
+      .from('rooms')
+      .select('*')
+      .eq('room_number', roomNumber)
+      .eq('is_active', true)
+      .single();
+
+    if (error) {
+      console.error('Error fetching room by number:', error);
+      return null;
+    }
+
+    return {
+      id: data.id,
+      roomNumber: data.room_number,
+      buildingId: data.building_id,
+      roomType: data.room_type,
+      hasBath: data.has_bath,
+      hasToilet: data.has_toilet,
+      isActive: data.is_active,
+    };
+  },
+
+  add: async (room: Omit<Room, 'id'>): Promise<void> => {
+    const { error } = await supabase.from('rooms').insert({
+      room_number: room.roomNumber,
+      building_id: room.buildingId,
+      room_type: room.roomType,
+      has_bath: room.hasBath,
+      has_toilet: room.hasToilet,
+      is_active: room.isActive,
+    });
+
+    if (error) {
+      console.error('Error adding room:', error);
+      throw error;
+    }
+  },
+
+  update: async (id: string, updates: Partial<Room>): Promise<void> => {
+    const updateData: any = {};
+    if (updates.roomNumber !== undefined) updateData.room_number = updates.roomNumber;
+    if (updates.buildingId !== undefined) updateData.building_id = updates.buildingId;
+    if (updates.roomType !== undefined) updateData.room_type = updates.roomType;
+    if (updates.hasBath !== undefined) updateData.has_bath = updates.hasBath;
+    if (updates.hasToilet !== undefined) updateData.has_toilet = updates.hasToilet;
+    if (updates.isActive !== undefined) updateData.is_active = updates.isActive;
+
+    const { error } = await supabase
+      .from('rooms')
+      .update(updateData)
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating room:', error);
+      throw error;
+    }
+  },
+
+  delete: async (id: string): Promise<void> => {
+    const { error } = await supabase
+      .from('rooms')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting room:', error);
+      throw error;
+    }
+  },
+
+  // 一括登録（CSV インポート時などに使用）
+  bulkAdd: async (rooms: Omit<Room, 'id'>[]): Promise<void> => {
+    const insertData = rooms.map(room => ({
+      room_number: room.roomNumber,
+      building_id: room.buildingId,
+      room_type: room.roomType,
+      has_bath: room.hasBath,
+      has_toilet: room.hasToilet,
+      is_active: room.isActive,
+    }));
+
+    const { error } = await supabase.from('rooms').insert(insertData);
+
+    if (error) {
+      console.error('Error bulk adding rooms:', error);
       throw error;
     }
   },
