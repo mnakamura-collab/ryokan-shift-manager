@@ -182,6 +182,7 @@ export default function StaffDetailView({
               currentUser={selectedStaff}
               staff={allStaff}
               onUpdate={() => {}}
+              isAdminView={true}
             />
           )}
 

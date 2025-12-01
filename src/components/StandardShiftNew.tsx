@@ -7,11 +7,12 @@ interface StandardShiftProps {
   currentUser: Staff;
   staff: Staff[];
   onUpdate: () => void;
+  isAdminView?: boolean; // 管理者が他のスタッフの標準シフトを見る場合
 }
 
 const daysOfWeek = ['日', '月', '火', '水', '木', '金', '土'];
 
-export default function StandardShiftNew({ currentUser, staff, onUpdate }: StandardShiftProps) {
+export default function StandardShiftNew({ currentUser, staff, onUpdate, isAdminView = false }: StandardShiftProps) {
   const [selectedStaffId, setSelectedStaffId] = useState<string>('');
   const [showModal, setShowModal] = useState(false);
   const [schedules, setSchedules] = useState<StaffStandardSchedule[]>([]);
@@ -226,7 +227,8 @@ export default function StandardShiftNew({ currentUser, staff, onUpdate }: Stand
     }
   };
 
-  if (currentUser.role !== 'admin') {
+  // 管理者ビューでない場合のみ権限チェック
+  if (!isAdminView && currentUser.role !== 'admin') {
     return (
       <div className="card">
         <p className="text-gray-500 text-center py-8">
